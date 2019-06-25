@@ -239,8 +239,10 @@ CreateWellKnownSockets(void)
 
     if (NoListenAll) {
         ListenTransCount = 0;
+        partial = 1;
     }
-    else if ((displayfd < 0) || explicit_display) {
+
+    if ((displayfd < 0) || explicit_display) {
         if (TryCreateSocket(atoi(display), &partial) &&
             ListenTransCount >= 1)
             if (!PartialNetwork && partial)
