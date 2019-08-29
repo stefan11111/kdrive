@@ -822,6 +822,11 @@ glamor_egl_close_screen(ScreenPtr screen)
     eglDestroyImageKHR(glamor_egl->display, pixmap_priv->image);
     pixmap_priv->image = NULL;
 
+    if (glamor_egl->device_path) {
+        free(glamor_egl->device_path);
+        glamor_egl->device_path = NULL;
+    }
+
     screen->CloseScreen = glamor_egl->saved_close_screen;
 
     return screen->CloseScreen(screen);
@@ -972,7 +977,6 @@ static void glamor_egl_cleanup(struct glamor_egl_screen_private *glamor_egl)
     }
     if (glamor_egl->gbm)
         gbm_device_destroy(glamor_egl->gbm);
-    free(glamor_egl->device_path);
     free(glamor_egl->glvnd_vendor);
     free(glamor_egl);
 }
