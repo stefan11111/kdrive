@@ -178,9 +178,8 @@ meson:
       PIGLIT_DIR: /root/piglit
       LP_NUM_THREADS: 0
       MESON_DDX_BUILD_ARGS: >
-        -Dxwayland=${BUILD_XWAYLAND} -Dxorg=${BUILD_XORG} -Dxephyr=${BUILD_XEPHYR} -Dxvfb=${BUILD_XVFB} -Dxnest=${BUILD_XNEST}
+        -Dxwayland=${BUILD_XWAYLAND} -Dxorg=${BUILD_XORG} -Dxephyr=${BUILD_XEPHYR} -Dxvfb=${BUILD_XVFB}
       BUILD_XEPHYR: true
-      BUILD_XNEST: true
       BUILD_XORG: true
       BUILD_XVFB: true
       BUILD_XWAYLAND: true
@@ -205,7 +204,6 @@ xwayland-nolibdecor:
     extends: meson
     variables:
         BUILD_XEPHYR: false
-        BUILD_XNEST: false
         BUILD_XORG: false
         BUILD_XVFB: false
         MESON_EXTRA_ARGS: -Dlibdecor=false ${MESON_DDX_BUILD_ARGS}
@@ -306,7 +304,7 @@ xf86-driver-build-test:
     variables:
         GIT_DEPTH: 1
         MESON_ARGS: -Dprefix=/usr/
-        MESON_EXTRA_ARGS: -Dxwayland=false -Dxnest=false -Dxvfb=false -Ddocs=false
+        MESON_EXTRA_ARGS: -Dxwayland=false -Dxvfb=false -Ddocs=false
     rules:
       - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
         changes:

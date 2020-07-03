@@ -6,10 +6,6 @@ if build_xvfb
     subdir('vfb')
 endif
 
-if build_xnest
-    subdir('xnest')
-endif
-
 if build_xorg
     subdir('xfree86')
 endif
