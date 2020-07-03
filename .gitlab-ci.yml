@@ -21,24 +21,19 @@ variables:
     REPO_URL_XORGPROTO:   'https://gitlab.freedesktop.org/xorg/proto/xorgproto.git'
     XORG_DEBIAN_VERSION:  'bullseye-slim'
     XORG_DEBIAN_EXEC:     'env FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/debian-install.sh'
-    XORG_DEBIAN_TAG:      '2025-03-04-no-mingw'
-    XORG_FREEBSD_VERSION: '14.2'
-    XORG_FREEBSD_EXEC:    ''
-    XORG_FREEBSD_TAG:     '2025-02-18-vm-image'
+    XORG_DEBIAN_TAG:      '2025-03-04-no-xorg'
 
 include:
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
     file:
       - '/templates/debian.yml'
-      - '/templates/freebsd.yml'
       - '/templates/ci-fairy.yml'
   - template: Security/SAST.gitlab-ci.yml
 
 stages:
     - docker-image
     - build-and-test
-    - drivers
     - test
 
 .ci-run-policy:
@@ -50,69 +45,11 @@ stages:
   # Cancel CI run if a newer commit is pushed to the same branch
   interruptible: true
 
-# This is everything but the DDXen
-.dix_paths: &dix_paths
-  # Directories
-  - .gitlab-ci/**/*
-  - composite/**/*
-  - config/**/*
-  - damageext/**/*
-  - dbe/**/*
-  - dix/**/*
-  - doc/**/*
-  - dri3/**/*
-  - exa/**/*
-  - fb/**/*
-  - glamor/**/*
-  - glx/**/*
-  - include/**/*
-  - m4/**/*
-  - man/**/*
-  - mi/**/*
-  - miext/**/*
-  - os/**/*
-  - present/**/*
-  - pseudoramiX/**/*
-  - randr/**/*
-  - record/**/*
-  - render/**/*
-  - test/**/*
-  - Xext/**/*
-  - xfixes/**/*
-  - Xi/**/*
-  - xkb/**/*
-  # Files
-  - hw/meson.build
-  - .gitlab-ci.yml
-  - meson*
-  - xorg-server.m4
-  - xorg-server.pc.in
-  - xserver.ent.in
-
-.xorg_paths: &xorg_paths
-  - hw/xfree86/**/*
-
-.xwayland_paths: &xwayland_paths
-  - hw/xwayland/**/*
-
-.all_ddx_paths:
-  - hw/**/*
-
 .debian:
   variables:
     FDO_DISTRIBUTION_VERSION:   '$XORG_DEBIAN_VERSION'
     FDO_DISTRIBUTION_EXEC:      '$XORG_DEBIAN_EXEC'
     FDO_DISTRIBUTION_TAG:       '$XORG_DEBIAN_TAG'
-
-.freebsd:
-  tags:
-    - kvm
-  variables:
-    FDO_DISTRIBUTION_TAG:       '$XORG_FREEBSD_TAG'
-    FDO_DISTRIBUTION_VERSION:   '$XORG_FREEBSD_VERSION'
-    FDO_DISTRIBUTION_EXEC:      ''
-    FDO_DISTRIBUTION_PACKAGES:  'git gcc pkgconf autoconf automake libtool xorg-macros xorgproto bash meson ninja pixman xtrans libXau libXdmcp libXfont2 libxkbfile libxcvt libpciaccess font-util libepoll-shim'
-    FDO_IMAGE_SIZE:             '30G'
 
 debian-bullseye:
   extends:
@@ -123,26 +60,10 @@ debian-bullseye:
   variables:
     GIT_STRATEGY: none
 
-freebsd-image:
-  extends:
-    - .fdo.qemu-build@freebsd@x86_64
-    - .freebsd
-  stage: docker-image
-  variables:
-    GIT_STRATEGY:               none
-
 .xorg-image@debian:
     extends:
         - .fdo.distribution-image@debian
         - .debian
-
-.xorg-image@freebsd:
-    extends:
-        - .fdo.distribution-image@freebsd
-        - .freebsd
-    variables:
-        GIT_DEPTH:                1
-        PKG_CONFIG_PATH:          /usr/share/pkgconfig:/usr/lib/pkgconfig:/usr/pkg/share/pkgconfig:/usr/pkg/lib/pkgconfig:/usr/local/libdata/pkgconfig
 
 .common-build-and-test:
     extends:
@@ -178,9 +99,8 @@ meson:
       PIGLIT_DIR: /root/piglit
       LP_NUM_THREADS: 0
       MESON_DDX_BUILD_ARGS: >
-        -Dxwayland=${BUILD_XWAYLAND} -Dxorg=${BUILD_XORG} -Dxephyr=${BUILD_XEPHYR} -Dxvfb=${BUILD_XVFB}
+        -Dxwayland=${BUILD_XWAYLAND} -Dxephyr=${BUILD_XEPHYR} -Dxvfb=${BUILD_XVFB}
       BUILD_XEPHYR: true
-      BUILD_XORG: true
       BUILD_XVFB: true
       BUILD_XWAYLAND: true
       MESON_EXTRA_ARGS: ${MESON_DDX_BUILD_ARGS}
@@ -188,12 +108,12 @@ meson:
 meson-enable-options:
     extends: meson
     variables:
-        MESON_EXTRA_ARGS: --auto-features=enabled -Dlisten_tcp=true -Dsuid_wrapper=true -Dxf86bigfont=true -Dxcsecurity=true -Dxpbproxy=true -Ddri1=true -Ddri2=true -Ddri3=true -Dlibunwind=true ${MESON_DDX_BUILD_ARGS}
+        MESON_EXTRA_ARGS: --auto-features=enabled -Dlisten_tcp=true -Dxf86bigfont=true -Dxcsecurity=true -Ddri3=true -Dlibunwind=true ${MESON_DDX_BUILD_ARGS}
 
 meson-disable-options:
     extends: meson
     variables:
-        MESON_EXTRA_ARGS: --auto-features=disabled -Dglamor=false -Dglx=false -Dxdmcp=false -Dxdm-auth-1=false -Dint10=false -Dpciaccess=false -Dudev=false -Dudev_kms=false -Dvgahw=false -Dxace=false -Dxcsecurity=false -Dxinerama=false -Dxv=false -Dxvmc=false -Ddrm=false -Ddri1=false -Ddri2=false -Ddri3=false ${MESON_DDX_BUILD_ARGS}
+        MESON_EXTRA_ARGS: --auto-features=disabled -Dglamor=false -Dglx=false -Dxdmcp=false -Dxdm-auth-1=false -Dxace=false -Dxcsecurity=false -Dxinerama=false -Dxv=false -Ddrm=false -Ddri3=false ${MESON_DDX_BUILD_ARGS}
 
 meson-noglamor:
     extends: meson
@@ -204,32 +124,8 @@ xwayland-nolibdecor:
     extends: meson
     variables:
         BUILD_XEPHYR: false
-        BUILD_XORG: false
         BUILD_XVFB: false
         MESON_EXTRA_ARGS: -Dlibdecor=false ${MESON_DDX_BUILD_ARGS}
-
-freebsd:
-    stage: build-and-test
-    extends:
-        - .xorg-image@freebsd
-    variables:
-        MESON_ARGS: -Dglx=false -Dglamor=false -Dudev=false -Dudev_kms=false
-    script:
-      # running of of disk space without this
-      # needed until https://gitlab.freedesktop.org/freedesktop/ci-templates/-/issues/67 is fixed
-      - git gc
-      - git clone --depth=1 $REPO_URL_XORGPROTO dep.xorgproto
-      - /app/vmctl start
-      - set +e
-      - scp -r $PWD "vm:"
-      # need to install newer xorgproto
-      - /app/vmctl exec "cd $CI_PROJECT_NAME/dep.xorgproto && ./autogen.sh --prefix=/usr && make && make install"
-      - /app/vmctl exec "cd $CI_PROJECT_NAME && PKG_CONFIG_PATH=\"$PKG_CONFIG_PATH\" MESON_ARGS=\"$MESON_ARGS\" MESON_BUILDDIR=\"$MESON_BUILDDIR\" .gitlab-ci/meson-build.sh --skip-test" && touch .success
-      # test not working yet, so skipped
-      # - scp -r vm:$CI_PROJECT_NAME/test-results.xml .
-      - /app/vmctl stop
-      - set -e
-      - test -e .success || exit 1
 
 meson-dist:
     extends: .common-build-and-test
@@ -247,64 +143,6 @@ meson-dist:
     variables:
       MESON_DIST_ARGS: --no-tests
       MESON_EXTRA_ARGS: -Dprefix=$CI_PROJECT_DIR/xserver-tarball/install/
-
-xf86-driver-build-test:
-    extends:
-        - .xorg-image@debian
-        - .ci-run-policy
-    stage: drivers
-    parallel:
-        matrix:
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-input-evdev
-              SHA: xf86-input-evdev-2.10.6
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-input-libinput
-              SHA: xf86-input-libinput-1.4.0
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse
-              SHA: xf86-input-mouse-1.9.5
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-input-synaptics
-              SHA: xf86-input-synaptics-1.9.2
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-amdgpu
-              SHA: xf86-video-amdgpu-23.0.0
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-ati
-              SHA: xf86-video-ati-22.0.0
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-intel
-              SHA: e6a4c4740c15ace9dd79dc7c18955f2eb413a6a5 # no release yet
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-qxl
-              SHA: 989ff620220e8d0555cec38c1508b57dfbcfb0c6 # no release yet
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-vesa
-              SHA: xf86-video-vesa-2.6.0
-            - REPO: https://gitlab.freedesktop.org/xorg/driver/xf86-video-vmware
-              SHA: xf86-video-vmware-13.4.0
-    script:
-        # built xserver is taken from meson-dist job
-        - export PKG_CONFIG_PATH=$(pwd)/xserver-tarball/install/lib/x86_64-linux-gnu/pkgconfig
-        - export ACLOCAL_PATH=$(pwd)/xserver-tarball/install/share/aclocal/
-        - unset MESON_EXTRA_ARGS
-        - DRIVER=$(basename $REPO)
-        - git clone "$REPO" "$DRIVER"
-        - git -C "$DRIVER" checkout "$SHA"
-        - |
-          if [[ -e "$DRIVER/meson.build" ]] && [[ "$DRIVER" != "xf86-video-intel" ]]; then
-            .gitlab-ci/meson-build.sh -C "$DRIVER" --skip-test
-          else
-             pushd "$DRIVER" || exit 1
-             ./autogen.sh && make
-          fi
-    needs:
-        - meson-dist
-    dependencies:
-        - meson-dist
-    variables:
-        GIT_DEPTH: 1
-        MESON_ARGS: -Dprefix=/usr/
-        MESON_EXTRA_ARGS: -Dxwayland=false -Dxvfb=false -Ddocs=false
-    rules:
-      - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-        changes:
-          *dix_paths
-      - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-        changes:
-          *xorg_paths
 
 #
 # Verify that commit messages are as expected
