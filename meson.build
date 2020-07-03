@@ -245,16 +245,6 @@ if (host_machine.system() != 'darwin' and
     endforeach
 endif
 
-build_xwin = false
-if get_option('xwin') == 'auto'
-    if (host_machine.system() == 'cygwin' or
-        host_machine.system() == 'windows')
-            build_xwin = true
-    endif
-else
-    build_xwin = get_option('xwin') == 'true'
-endif
-
 build_xephyr = get_option('xephyr')
 build_xvfb = get_option('xvfb')
 
@@ -263,7 +253,6 @@ summary({
         'Xwayland': build_xwayland,
         'Xephyr': build_xephyr,
         'Xvfb': build_xvfb,
-        'Xwin': build_xwin,
     },
     section: 'DDX',
     bool_yn: true,
@@ -755,9 +744,6 @@ subdir('miext/damage')
 subdir('miext/shadow')
 subdir('miext/sync')
 subdir('present')
-if build_xwin
-    subdir('pseudoramiX')
-endif
 subdir('randr')
 subdir('record')
 subdir('render')

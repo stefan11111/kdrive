@@ -27,9 +27,7 @@ apt-get install -y \
 	build-essential \
 	ca-certificates \
 	ccache \
-	dpkg-dev \
 	flex \
-	gcc-mingw-w64-i686 \
 	git \
 	libaudit-dev \
 	libbsd-dev \
@@ -107,11 +105,12 @@ apt-get install -y \
 	libxv-dev \
 	libxvmc-dev \
 	libxxf86vm-dev \
-	libz-mingw-w64-dev \
 	linux-libc-dev/bullseye-backports \
 	mesa-common-dev \
 	meson/bullseye-backports \
-	mingw-w64-tools \
+	linux-libc-dev/bullseye-backports \
+	mesa-common-dev \
+	meson \
 	nettle-dev \
 	pkg-config \
 	python3-attr \
@@ -126,8 +125,6 @@ apt-get install -y \
 	xkb-data \
 	xtrans-dev \
 	xutils-dev
-
-.gitlab-ci/cross-prereqs-build.sh i686-w64-mingw32
 
 cd /root
 

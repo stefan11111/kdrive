@@ -21,7 +21,7 @@ variables:
     REPO_URL_XORGPROTO:   'https://gitlab.freedesktop.org/xorg/proto/xorgproto.git'
     XORG_DEBIAN_VERSION:  'bullseye-slim'
     XORG_DEBIAN_EXEC:     'env FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/debian-install.sh'
-    XORG_DEBIAN_TAG:      '2025-02-26-xcb-deps'
+    XORG_DEBIAN_TAG:      '2025-03-04-no-mingw'
     XORG_FREEBSD_VERSION: '14.2'
     XORG_FREEBSD_EXEC:    ''
     XORG_FREEBSD_TAG:     '2025-02-18-vm-image'
@@ -207,13 +207,6 @@ xwayland-nolibdecor:
         BUILD_XORG: false
         BUILD_XVFB: false
         MESON_EXTRA_ARGS: -Dlibdecor=false ${MESON_DDX_BUILD_ARGS}
-
-mingw-cross-build:
-    extends: .common-build-and-test
-    script:
-        - .gitlab-ci/meson-build.sh --run-install
-    variables:
-      MESON_ARGS: --cross-file=.gitlab-ci/cross-i686-w64-mingw32.txt -Dglx=false -Dlisten_tcp=true -Dpciaccess=false
 
 freebsd:
     stage: build-and-test
