@@ -105,9 +105,6 @@ xkbcomp_dep = dependency('xkbcomp', required: false)
 xkbfile_dep = dependency('xkbfile')
 xfont2_dep = dependency('xfont2', version: '>= 2.0')
 
-dbus_required = get_option('systemd_logind') == 'true'
-dbus_dep = dependency('dbus-1', version: '>= 1.0', required: dbus_required)
-
 build_systemd = get_option('systemd_notify') == 'true'
 # libsystemd-daemon was moved into libsystemd in version 209
 libsystemd_daemon_dep = dependency('libsystemd', version: '>= 209', required: false)
@@ -175,24 +172,6 @@ endif
 
 glamor_option = get_option('glamor')
 
-hal_option = get_option('hal')
-if ['windows', 'darwin', 'cygwin'].contains(host_machine.system())
-    hal_option = 'false'
-endif
-
-build_udev = get_option('udev')
-build_udev_kms = get_option('udev_kms')
-if ['windows', 'darwin', 'cygwin', 'freebsd', 'netbsd', 'openbsd', 'sunos'].contains(host_machine.system())
-    build_udev = false
-    build_udev_kms = false
-endif
-
-if get_option('systemd_logind') == 'auto'
-    build_systemd_logind = build_udev_kms and dbus_dep.found()
-else
-    build_systemd_logind = get_option('systemd_logind') == 'true'
-endif
-
 with_dtrace = get_option('dtrace')
 if with_dtrace
     dtrace = find_program('dtrace', required: true)
@@ -258,32 +237,6 @@ if build_ipv6 and not have_AF_INET6
     error('ipv6 support needs AF_INET6')
 endif
 message('IPv6 support: ' + (build_ipv6 ? 'YES' : 'NO'))
-
-hal_dep = []
-if hal_option == 'auto'
-    if not build_udev
-        hal_dep = dependency('hal', required: false)
-        build_hal = hal_dep.found()
-    else
-        build_hal = false
-    endif
-else
-    build_hal = hal_option == 'true'
-    if build_hal
-        hal_dep = dependency('hal')
-    endif
-endif
-
-if build_udev and build_hal
-    error('Hotplugging through both libudev and hal not allowed')
-endif
-
-build_dbus = build_hal or build_systemd_logind
-
-udev_dep = dependency('', required:false)
-if build_udev or build_udev_kms
-    udev_dep = dependency('libudev', version: '>= 143')
-endif
 
 if glamor_option == 'auto'
     build_glamor = build_xwayland
@@ -632,7 +585,6 @@ endif
 subdir('include')
 
 # X server core
-subdir('config')
 subdir('dix')
 subdir('dri3')
 subdir('glx')

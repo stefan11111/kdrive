@@ -82,6 +82,7 @@ Equipment Corporation.
 #include <X11/Xos.h>            /* for unistd.h  */
 #include <X11/Xproto.h>
 #include <pixman.h>
+
 #include "scrnintstr.h"
 #include "misc.h"
 #include "os.h"
@@ -99,7 +100,6 @@ Equipment Corporation.
 #include <X11/fonts/libxfont2.h>
 #include "opaque.h"
 #include "servermd.h"
-#include "hotplug.h"
 #include "dixfont.h"
 #include "extnsionst.h"
 #include "privates.h"
