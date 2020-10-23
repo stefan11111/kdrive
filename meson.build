@@ -231,12 +231,10 @@ if (host_machine.system() != 'darwin' and
     endforeach
 endif
 
-build_xephyr = get_option('xephyr')
 build_xvfb = get_option('xvfb')
 
 summary({
         'Xwayland': build_xwayland,
-        'Xephyr': build_xephyr,
         'Xvfb': build_xvfb,
     },
     section: 'DDX',
@@ -659,9 +657,6 @@ subdir('Xi')
 # other
 if build_glamor
     subdir('glamor')
-endif
-if get_option('xephyr')
-    subdir('exa')
 endif
 subdir('doc')
 

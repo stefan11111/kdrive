@@ -22,9 +22,3 @@ endif
 if host_machine.system() == 'netbsd' or host_machine.system() == 'openbsd'
     srcs_config += 'wscons.c'
 endif
-
-libxserver_config = static_library('libxserver_config',
-    srcs_config,
-    include_directories: inc,
-    dependencies: config_dep,
-)

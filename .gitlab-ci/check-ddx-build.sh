@@ -16,7 +16,6 @@ if [[ -z "$MESON_BUILDDIR" ]]; then
     exit 1
 fi
 
-[[ "$BUILD_XEPHYR" == true ]]   && check_executable "hw/kdrive/ephyr/Xephyr"
 [[ "$BUILD_XVFB" == true ]]     && check_executable "hw/vfb/Xvfb"
 [[ "$BUILD_XWAYLAND" == true ]] && check_executable "hw/xwayland/Xwayland"
 

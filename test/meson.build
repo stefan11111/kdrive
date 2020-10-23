@@ -101,52 +101,6 @@ if get_option('xvfb')
                 )
         endforeach
     endif
-
-    if get_option('xephyr') and build_glamor
-        foreach testsuite : ['','-gles2','-gles3']
-            test_env = piglit_env
-            if(testsuite == '-gles2')
-                test_env = gles20_env
-            endif
-            test('XTS',
-                find_program('scripts/xephyr-glamor' + testsuite + '-piglit.sh'),
-                env: piglit_env,
-                timeout: 1200,
-                suite: 'xephyr-glamor' + testsuite,
-            )
-        endforeach
-        test_parameters = [
-                [rendercheck_tests, '', piglit_env, '', false],
-                [rendercheck_tests_gles2_success, '_gles2', gles20_env, '-gles2', false],
-                [rendercheck_a8, '_gles2', gles20_env, '-gles2', true],
-                [rendercheck_tests_gles3, '_gles2', piglit_env, '-gles3', false]
-            ]
-
-        if rendercheck.found()
-            foreach testsuite : test_parameters
-                foreach rctest : testsuite[0]
-                    test(rctest[0],
-                        simple_xinit,
-                        args: [simple_xinit.full_path(),
-                                rendercheck.full_path(),
-                                rctest[1].split(' '),
-                                '----',
-                                xephyr_server.full_path(),
-                                '-glamor' + testsuite[1],
-                                '-glamor-skip-present',
-                                '-schedMax', '2000',
-                                '--',
-                                xvfb_args,
-                            ],
-                        env: testsuite[2],
-                        suite: 'xephyr-glamor' + testsuite[3],
-                        should_fail: testsuite[4],
-                        timeout: 300,
-                        )
-                endforeach
-            endforeach
-        endif
-    endif
 endif
 
 if build_xwayland
@@ -165,4 +119,3 @@ endif
 subdir('bigreq')
 subdir('damage')
 subdir('sync')
-subdir('bugs')

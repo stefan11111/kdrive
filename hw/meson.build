@@ -1,7 +1,3 @@
-if build_xephyr
-    subdir('kdrive')
-endif
-
 if build_xvfb
     subdir('vfb')
 endif
