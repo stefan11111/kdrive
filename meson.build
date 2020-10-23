@@ -170,45 +170,39 @@ else
     default_font_path = dfp
 endif
 
-glamor_option = get_option('glamor')
+build_glamor = get_option('glamor')
 
 with_dtrace = get_option('dtrace')
 if with_dtrace
     dtrace = find_program('dtrace', required: true)
 endif
 
-libxcvt_dep = dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: false)
-build_xwayland = false
-if (host_machine.system() != 'darwin' and
-    host_machine.system() != 'windows' and
-    get_option('xwayland') != 'false')
-    xwayland_required = get_option('xwayland') == 'true'
-    build_glamor = glamor_option == 'true' or glamor_option == 'auto'
+libxcvt_dep = dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: true)
+build_xwayland = true
 
-    xwayland_path = get_option('xwayland-path')
-    if (xwayland_path == '')
-        xwayland_path = join_paths(get_option('prefix'), get_option('bindir'))
-    endif
-
-    xwayland_dep = [
-        dependency('wayland-client', version: wayland_req, required: xwayland_required),
-        dependency('wayland-protocols', version: wayland_protocols_req, required: xwayland_required),
-        dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: xwayland_required),
-    ]
-    if build_glamor
-        xwayland_dep += dependency('xshmfence', version: xshmfence_req, required: xwayland_required)
-        xwayland_dep += dependency('libdrm', version: libdrm_req, required: xwayland_required)
-        xwayland_dep += dependency('epoxy', required: xwayland_required)
-    endif
-
-    build_xwayland = true
-    # check for all the deps being found, to handle 'auto' mode.
-    foreach d: xwayland_dep
-        if not d.found()
-            build_xwayland = false
-        endif
-    endforeach
+xwayland_path = get_option('xwayland-path')
+if (xwayland_path == '')
+    xwayland_path = join_paths(get_option('prefix'), get_option('bindir'))
 endif
+
+xwayland_dep = [
+    dependency('wayland-client', version: wayland_req, required: true),
+    dependency('wayland-protocols', version: wayland_protocols_req, required: true),
+    dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: true),
+]
+if build_glamor
+    xwayland_dep += dependency('xshmfence', version: xshmfence_req, required: true)
+    xwayland_dep += dependency('libdrm', version: libdrm_req, required: true)
+    xwayland_dep += dependency('epoxy', required: true)
+endif
+
+build_xwayland = true
+# check for all the deps being found, to handle 'auto' mode.
+foreach d: xwayland_dep
+    if not d.found()
+        build_xwayland = false
+    endif
+endforeach
 
 build_xvfb = get_option('xvfb')
 
@@ -238,12 +232,6 @@ if build_ipv6 and not have_AF_INET6
 endif
 message('IPv6 support: ' + (build_ipv6 ? 'YES' : 'NO'))
 
-if glamor_option == 'auto'
-    build_glamor = build_xwayland
-else
-    build_glamor = glamor_option == 'true'
-endif
-
 gbm_dep = dependency('', required: false)
 epoxy_dep = dependency('', required: false)
 if build_glamor
@@ -251,31 +239,22 @@ if build_glamor
     epoxy_dep = dependency('epoxy', required: false)
 endif
 
-if build_xwayland
-    libdecor_dep = dependency('libdecor-0', required: false)
-    libdecor_option = get_option('libdecor')
-    if libdecor_option == 'auto'
-        have_libdecor = libdecor_dep.found()
-    else
-        have_libdecor = libdecor_option == 'true'
-        if have_libdecor and not libdecor_dep.found()
-            error('libdecor support requested but not found')
-        endif
+libdecor_dep = dependency('libdecor-0', required: false)
+libdecor_option = get_option('libdecor')
+if libdecor_option == 'auto'
+    have_libdecor = libdecor_dep.found()
+else
+    have_libdecor = libdecor_option == 'true'
+    if have_libdecor and not libdecor_dep.found()
+        error('libdecor support requested but not found')
     endif
-else
-    have_libdecor = false
 endif
 
-if build_xwayland
-    libei_dep = dependency('libei-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') in ['portal', 'socket'])
-    liboeffis_dep = dependency('liboeffis-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') == 'portal')
+libei_dep = dependency('libei-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') in ['portal', 'socket'])
+liboeffis_dep = dependency('liboeffis-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') == 'portal')
 
-    build_ei = libei_dep.found() and get_option('xwayland_ei') != 'false'
-    build_ei_portal = liboeffis_dep.found() and get_option('xwayland_ei') in ['portal', 'auto']
-else
-    build_ei = false
-    build_ei_portal = false
-endif
+build_ei = libei_dep.found() and get_option('xwayland_ei') != 'false'
+build_ei_portal = liboeffis_dep.found() and get_option('xwayland_ei') in ['portal', 'auto']
 
 # Lots of sha1 options, because Linux is about choice :)
 

@@ -17,6 +17,7 @@ if [[ -z "$MESON_BUILDDIR" ]]; then
 fi
 
 [[ "$BUILD_XVFB" == true ]]     && check_executable "hw/vfb/Xvfb"
-[[ "$BUILD_XWAYLAND" == true ]] && check_executable "hw/xwayland/Xwayland"
+# Xwayland is not optional
+check_executable "hw/xwayland/Xwayland"
 
 exit 0
