@@ -130,16 +130,17 @@ meson-dist:
         when: always
         paths:
             - $MESON_BUILDDIR/meson-logs/
-            - $MESON_BUILDDIR/xserver-*/$MESON_BUILDDIR/meson-logs/
-            - xserver-tarball/install/
+            - $MESON_BUILDDIR/xwayland-*/$MESON_BUILDDIR/meson-logs/
+            - xwayland-tarball/install/
     script:
         - .gitlab-ci/meson-build.sh --run-dist
-        - mkdir xserver-tarball
-        - tar xf $MESON_BUILDDIR/meson-dist/xserver-*.tar.xz -C xserver-tarball --strip-components=1
-        - .gitlab-ci/meson-build.sh -C xserver-tarball --skip-test --skip-dist --run-install
+        - mkdir xwayland-tarball
+        - tar xf $MESON_BUILDDIR/meson-dist/xwayland-*.tar.xz -C xwayland-tarball --strip-components=1
+        - .gitlab-ci/meson-build.sh -C xwayland-tarball --skip-test --skip-dist --run-install
     variables:
       MESON_DIST_ARGS: --no-tests
-      MESON_EXTRA_ARGS: -Dprefix=$CI_PROJECT_DIR/xserver-tarball/install/
+      MESON_EXTRA_ARGS: -Dprefix=$CI_PROJECT_DIR/xwayland-tarball/install/
+      DESTDIR: xwayland-tarball/install/
 
 #
 # Verify that commit messages are as expected
