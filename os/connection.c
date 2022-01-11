@@ -241,6 +241,13 @@ CreateWellKnownSockets(void)
         ListenTransCount = 0;
     }
     else if ((displayfd < 0) || explicit_display) {
+        if (!LockServer(atoi(display)))
+            FatalError
+                ("Server is already active for display %s\n"
+                 "\tIf this server is no longer running, remove the lockfile\n"
+                 "\tand start again.\n",
+                 display);
+
         if (TryCreateSocket(atoi(display), &partial) &&
             ListenTransCount >= 1)
             if (!PartialNetwork && partial)
@@ -249,12 +256,18 @@ CreateWellKnownSockets(void)
     else { /* -displayfd and no explicit display number */
         Bool found = 0;
         for (i = 0; i < 65536 - X_TCP_PORT; i++) {
+            DebugF("Trying to take lock for display number %d\n", i);
+            if (!LockServer(i))
+                continue;
+
+            DebugF("Trying to create socket for display number %d\n", i);
             if (TryCreateSocket(i, &partial) && !partial) {
                 found = 1;
                 break;
-            }
-            else
+            } else {
                 CloseWellKnownConnections();
+                UnlockServer();
+            }
         }
         if (!found)
             FatalError("Failed to find a socket to listen on");
