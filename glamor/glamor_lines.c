@@ -73,6 +73,8 @@ glamor_poly_lines_solid_gl(DrawablePtr drawable, GCPtr gc,
     v = glamor_get_vbo_space(drawable->pScreen,
                              (n + add_last) * sizeof (DDXPointRec),
                              &vbo_offset);
+    if (!v)
+        goto bail;
 
     glEnableVertexAttribArray(GLAMOR_VERTEX_POS);
     glVertexAttribPointer(GLAMOR_VERTEX_POS, 2, GL_SHORT, GL_FALSE,

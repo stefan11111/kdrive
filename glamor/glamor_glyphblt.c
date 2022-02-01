@@ -117,6 +117,8 @@ glamor_poly_glyph_blt_gl(DrawablePtr drawable, GCPtr gc,
                                                           max_points *
                                                           (2 * sizeof (INT16)),
                                                           &vbo_offset);
+                            if (!points)
+                                goto bail;
 
                             glVertexAttribPointer(GLAMOR_VERTEX_POS,
                                                   2, GL_SHORT,
@@ -203,6 +205,9 @@ glamor_push_pixels_gl(GCPtr gc, PixmapPtr bitmap,
 
     points = glamor_get_vbo_space(screen, w * h * sizeof(INT16) * 2,
                                   &vbo_offset);
+    if (!points)
+        goto bail;
+
     num_points = 0;
 
     /* Note that because fb sets miTranslate in the GC, our incoming X
