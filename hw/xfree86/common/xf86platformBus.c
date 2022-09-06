@@ -77,12 +77,36 @@ xf86_add_platform_device(struct OdevAttributes *attribs, Bool unowned)
 int
 xf86_remove_platform_device(int dev_index)
 {
-    int j;
+    int i, j;
 
     config_odev_free_attributes(xf86_platform_devices[dev_index].attribs);
 
-    for (j = dev_index; j < xf86_num_platform_devices - 1; j++)
+    /* Remove redundant members from the xf86_platform_devices[],
+     * and adjust the xf86Entities[i]->bus.id.plat pointer. */
+    for (j = dev_index; j < xf86_num_platform_devices - 1; j++) {
         memcpy(&xf86_platform_devices[j], &xf86_platform_devices[j + 1], sizeof(struct xf86_platform_device));
+
+        for(i=0; i<xf86NumEntities; i++) {
+            if( xf86Entities[i]->numdev == j+1 ) {
+                xf86Entities[i]->bus.id.plat = &xf86_platform_devices[j];
+            }
+        }
+    }
+
+    if( dev_index !=  xf86_num_platform_devices -1 ) {
+        for(i=0; i<xf86NumEntities; i++) {
+            if( xf86Entities[i]->numdev == dev_index ) {
+                xf86Entities[i]->bus.id.plat = &xf86_platform_devices[xf86_num_platform_devices -1];
+            }
+        }
+    }
+
+    for(i=0; i < xf86NumEntities; i++) {
+        if( xf86Entities[i]->bus.id.plat == &xf86_platform_devices[i] ) {
+            xf86Entities[i]->numdev = i;
+        }
+    }
+
     xf86_num_platform_devices--;
     return 0;
 }
@@ -415,7 +439,7 @@ xf86ClaimPlatformSlot(struct xf86_platform_device * d, DriverPtr drvp,
                   int chipset, GDevPtr dev, Bool active)
 {
     EntityPtr p = NULL;
-    int num;
+    int num, i;
 
     if (xf86_check_platform_slot(d)) {
         num = xf86AllocateEntity();
@@ -428,6 +452,11 @@ xf86ClaimPlatformSlot(struct xf86_platform_device * d, DriverPtr drvp,
         p->inUse = FALSE;
         if (dev)
             xf86AddDevToEntity(num, dev);
+
+        for(i = 0; i < xf86_num_platform_devices; i++) {
+            if(p->bus.id.plat == &xf86_platform_devices[i])
+                p->numdev = i;
+        }
 
         platformSlotClaimed++;
         return num;

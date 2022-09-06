@@ -50,6 +50,7 @@ typedef struct {
     int entityProp;
     Bool active;
     Bool inUse;
+    int numdev;
     BusRec bus;
     DevUnion *entityPrivates;
     int numInstances;
