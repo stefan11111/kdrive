@@ -155,6 +155,14 @@ make -j${FDO_CI_CONCURRENT:-4} install
 popd
 rm -rf xorgproto
 
+# xserver requires xtrans >= 1.5.0
+git clone https://gitlab.freedesktop.org/xorg/lib/libxtrans.git --depth 1 --branch=xtrans-1.5.0
+pushd libxtrans
+./autogen.sh
+make -j${FDO_CI_CONCURRENT:-4} install
+popd
+rm -rf libxtrans
+
 # wayland-protocols requires wayland-scanner 1.20, but Debian bullseye has 1.18 only
 git clone https://gitlab.freedesktop.org/wayland/wayland.git --depth 1 --branch=1.21.0
 cd wayland
