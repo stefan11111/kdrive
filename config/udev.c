@@ -125,7 +125,8 @@ device_added(struct udev_device *udev_device)
 #ifdef CONFIG_UDEV_KMS
     subsys = udev_device_get_subsystem(udev_device);
 
-    if (subsys && !strcmp(subsys, "drm")) {
+    if (subsys && !strcmp(subsys, "drm") &&
+        !udev_device_get_property_value(udev_device, "GVT_DISPLAY_READY")) {
         const char *sysname = udev_device_get_sysname(udev_device);
 
         if (strncmp(sysname, "card", 4) != 0)
@@ -323,7 +324,8 @@ device_removed(struct udev_device *device)
 #ifdef CONFIG_UDEV_KMS
     const char *subsys = udev_device_get_subsystem(device);
 
-    if (subsys && !strcmp(subsys, "drm")) {
+    if (subsys && !strcmp(subsys, "drm") &&
+        !udev_device_get_property_value(device, "GVT_DISPLAY_READY")) {
         const char *sysname = udev_device_get_sysname(device);
         const char *path = udev_device_get_devnode(device);
         dev_t devnum = udev_device_get_devnum(device);
