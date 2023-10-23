@@ -246,6 +246,15 @@ present_pixmap(WindowPtr window,
 {
     ScreenPtr                   screen = window->drawable.pScreen;
     present_screen_priv_ptr     screen_priv = present_screen_priv(screen);
+    uint32_t                    capabilities;
+
+    /* Make sure the option PresentOptionAsyncMayTear, if passed by the client,
+     * is actually supported.
+     */
+    capabilities = screen_priv->query_capabilities(screen_priv);
+    if ((options & PresentOptionAsyncMayTear) &&
+        !(capabilities & PresentCapabilityAsyncMayTear))
+        return BadValue;
 
     return screen_priv->present_pixmap(window,
                                        pixmap,
