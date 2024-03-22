@@ -1256,6 +1256,7 @@ glamor_composite_with_shader(CARD8 op,
     if (ca_state != CA_TWO_PASS &&
         key.dest_swizzle == SHADER_DEST_SWIZZLE_DEFAULT &&
         dest_pixmap->drawable.depth == 32 &&
+        dest_pixmap->drawable.id != 0 &&
         glamor_drawable_effective_depth(dest->pDrawable) == 24) {
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
         restore_colormask = TRUE;
