@@ -82,6 +82,7 @@ apt-get install -y \
 	libxcb-xf86dri0-dev \
 	libxcb-xinput-dev \
 	libxcb-xkb-dev \
+	libxcb-xinput-dev \
 	libxcb-xv0-dev \
 	libxcb1-dev \
 	libxcursor-dev \
