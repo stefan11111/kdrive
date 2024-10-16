@@ -138,6 +138,41 @@ KdFreePointer(KdPointerInfo * pi)
     free(pi);
 }
 
+KdTouchInfo *
+KdNewTouch(void)
+{
+    KdTouchInfo *ti;
+    int i;
+
+    ti = (KdTouchInfo *) calloc(1, sizeof(KdTouchInfo));
+    if (!ti)
+        return NULL;
+
+    ti->name = strdup("Generic Touch");
+    ti->path = NULL;
+    ti->inputClass = KD_TOUCHSCREEN;
+    ti->driver = NULL;
+    ti->driverPrivate = NULL;
+    ti->next = NULL;
+    ti->options = NULL;
+    ti->nAxes = 2;
+    ti->nButtons = 1;
+    for (i = 1; i < 1; i++)
+        ti->map[i] = i;
+
+    return ti;
+}
+
+void
+KdFreeTouch(KdTouchInfo * ti)
+{
+    free(ti->name);
+    free(ti->path);
+    input_option_free_list(&ti->options);
+    ti->next = NULL;
+    free(ti);
+}
+
 void
 KdFreeKeyboard(KdKeyboardInfo * ki)
 {

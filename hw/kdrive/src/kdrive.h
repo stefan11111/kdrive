@@ -221,6 +221,60 @@ int KdAddPointer(KdPointerInfo * ki);
 int KdAddConfigPointer(char *pointer);
 void KdRemovePointer(KdPointerInfo * ki);
 
+typedef struct _KdTouchInfo KdTouchInfo;
+
+typedef struct _KdTouchDriver {
+    const char *name;
+     Status(*Init) (KdTouchInfo *);
+     Status(*Enable) (KdTouchInfo *);
+    void (*Disable) (KdTouchInfo *);
+    void (*Fini) (KdTouchInfo *);
+    struct _KdTouchDriver *next;
+} KdTouchDriver;
+
+struct _KdTouchInfo {
+    DeviceIntPtr dixdev;
+    char *name;
+    char *path;
+    char *protocol;
+    InputOption *options;
+    int inputClass;
+
+    CARD8 map[KD_MAX_BUTTON + 1];
+    int nButtons;
+    int nAxes;
+
+    Bool emulateMiddleButton;
+    unsigned long emulationTimeout;
+    int emulationDx, emulationDy;
+
+    Bool timeoutPending;
+    KdPointerState mouseState;
+    Bool eventHeld;
+    struct {
+        int type;
+        int x;
+        int y;
+        int touchid;
+        int flags;
+    } heldEvent;
+    unsigned char buttonState;
+    Bool transformCoordinates;
+    int pressureThreshold;
+
+    KdTouchDriver *driver;
+    void *driverPrivate;
+
+    struct _KdTouchInfo *next;
+};
+
+void KdAddTouchDriver(KdTouchDriver * driver);
+void KdRemoveTouchDriver(KdTouchDriver * driver);
+KdTouchInfo *KdNewTouch(void);
+void KdFreeTouch(KdTouchInfo *);
+int KdAddTouch(KdTouchInfo * ki);
+void KdRemoveTouch(KdTouchInfo * ki);
+
 #define KD_KEY_COUNT 248
 #define KD_MIN_KEYCODE  8
 #define KD_MAX_KEYCODE  255
@@ -396,6 +450,10 @@ KdEnqueueKeyboardEvent(KdKeyboardInfo * ki, unsigned char scan_code,
 void
 KdEnqueuePointerEvent(KdPointerInfo * pi, unsigned long flags, int rx, int ry,
                       int rz);
+
+void
+KdEnqueueTouchEvent(KdTouchInfo * pi, unsigned long type, int rx, int ry,
+                      int touchid);
 
 void
  KdSetPointerMatrix(KdPointerMatrix *pointer);

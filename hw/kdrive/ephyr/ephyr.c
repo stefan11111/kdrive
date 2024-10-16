@@ -27,6 +27,7 @@
 #include <dix-config.h>
 #endif
 
+#include <xcb/xinput.h>
 #include <xcb/xcb_keysyms.h>
 #include <X11/keysym.h>
 
@@ -47,6 +48,7 @@ extern Bool ephyr_glamor;
 
 KdKeyboardInfo *ephyrKbd;
 KdPointerInfo *ephyrMouse;
+KdTouchInfo *ephyrTouch;
 Bool ephyrNoDRI = FALSE;
 Bool ephyrNoXV = FALSE;
 
@@ -55,7 +57,7 @@ static Rotation ephyrRandr = RR_Rotate_0;
 
 typedef struct _EphyrInputPrivate {
     Bool enabled;
-} EphyrKbdPrivate, EphyrPointerPrivate;
+} EphyrKbdPrivate, EphyrPointerPrivate, EphyrTouchPrivate;
 
 Bool EphyrWantGrayScale = 0;
 Bool EphyrWantResize = 0;
@@ -650,6 +652,36 @@ ephyrCreateColormap(ColormapPtr pmap)
 }
 
 Bool
+ephyrXiInit(void)
+{
+    xcb_connection_t *conn = hostx_get_xcbconn();
+    const xcb_query_extension_reply_t *ext;
+
+    ext = xcb_get_extension_data(conn, &xcb_input_id);
+    if (!ext || !ext->present) {
+        EPHYR_LOG_ERROR("X Input extension not available.\n");
+        return FALSE;
+    }
+
+    xcb_input_xi_query_version_cookie_t xi_cookie =
+               xcb_input_xi_query_version(conn, 2, 0);
+    xcb_input_xi_query_version_reply_t *xi_reply =
+               xcb_input_xi_query_version_reply(conn, xi_cookie, NULL);
+    if (!xi_reply || xi_reply->major_version < 2) {
+       EPHYR_LOG_ERROR("X11 does not support required Xinput version "
+               "(has %d.%d, want 2.0)\n",
+               xi_reply->major_version, xi_reply->minor_version);
+       free(xi_reply);
+       return FALSE;
+    }
+    EPHYR_LOG("Xi version: "
+            "(has %d.%d)\n",
+            xi_reply->major_version, xi_reply->minor_version);
+    free(xi_reply);
+    return TRUE;
+}
+
+Bool
 ephyrInitScreen(ScreenPtr pScreen)
 {
     KdScreenPriv(pScreen);
@@ -676,6 +708,8 @@ ephyrInitScreen(ScreenPtr pScreen)
         }
     }
 #endif /*XV*/
+
+    ephyrXiInit();
 
     return TRUE;
 }
@@ -1096,6 +1130,53 @@ ephyrProcessKeyRelease(xcb_generic_event_t *xev)
 }
 
 static void
+ephyrProcessTouchGen(xcb_generic_event_t *xev)
+{
+    uint32_t x = 0, y = 0;
+    int touchid = 0;
+
+    xcb_input_touch_begin_event_t *touch = (xcb_input_touch_begin_event_t *)xev;
+    KdScreenInfo *screen = screen_from_window(touch->event);
+
+    x = touch->event_x;
+    y = touch->event_y;
+    x += screen->pScreen->x;
+    y += screen->pScreen->y;
+    x = x/screen->width;
+    y = y/screen->height;
+    touchid = touch->detail;
+
+    KdEnqueueTouchEvent(ephyrTouch, touch->event_type, x, y, touchid);
+}
+
+static void
+ephyrProcessGeneric(xcb_generic_event_t *xev)
+{
+    xcb_connection_t *conn = hostx_get_xcbconn();
+    xcb_ge_generic_event_t *ev = (xcb_ge_generic_event_t *)xev;
+    const xcb_query_extension_reply_t *ext;
+    ext = xcb_get_extension_data(conn, &xcb_input_id);
+    if (!ext || !ext->present) {
+        EPHYR_LOG_ERROR("X Input extension not available.\n");
+       return;
+    }
+
+    if (ev->extension == ext->major_opcode) {
+        switch (ev->event_type) {
+            case XCB_INPUT_TOUCH_BEGIN:
+                ephyrProcessTouchGen(xev);
+                break;
+            case XCB_INPUT_TOUCH_END:
+                ephyrProcessTouchGen(xev);
+                break;
+            case XCB_INPUT_TOUCH_UPDATE:
+                ephyrProcessTouchGen(xev);
+                break;
+        }
+    }
+}
+
+static void
 ephyrProcessConfigureNotify(xcb_generic_event_t *xev)
 {
     xcb_configure_notify_event_t *configure =
@@ -1164,6 +1245,10 @@ ephyrXcbProcessEvents(Bool queued_only)
 
         case XCB_BUTTON_RELEASE:
             ephyrProcessButtonRelease(xev);
+            break;
+
+        case XCB_GE_GENERIC:
+            ephyrProcessGeneric(xev);
             break;
 
         case XCB_CONFIGURE_NOTIFY:
@@ -1312,6 +1397,56 @@ KdPointerDriver EphyrMouseDriver = {
     MouseEnable,
     MouseDisable,
     MouseFini,
+    NULL,
+};
+
+/* Touch */
+
+static Status
+TouchInit(KdTouchInfo * ti)
+{
+    ti->driverPrivate = (EphyrTouchPrivate *)
+        calloc(sizeof(EphyrTouchPrivate), 1);
+    ((EphyrTouchPrivate *) ti->driverPrivate)->enabled = FALSE;
+    ti->nAxes = 2;
+    ti->nButtons = 1;
+    free(ti->name);
+    ti->name = strdup("Xephyr virtual Touch");
+
+    ti->transformCoordinates = TRUE;
+
+    ephyrTouch = ti;
+    return Success;
+}
+
+static Status
+TouchEnable(KdTouchInfo * ti)
+{
+    ((EphyrTouchPrivate *) ti->driverPrivate)->enabled = TRUE;
+    return Success;
+}
+
+static void
+TouchDisable(KdTouchInfo * ti)
+{
+    ((EphyrTouchPrivate *) ti->driverPrivate)->enabled = FALSE;
+    return;
+}
+
+static void
+TouchFini(KdTouchInfo * ti)
+{
+    free(ti->driverPrivate);
+    ephyrTouch = NULL;
+    return;
+}
+
+KdTouchDriver EphyrTouchDriver = {
+    "ephyr",
+    TouchInit,
+    TouchEnable,
+    TouchDisable,
+    TouchFini,
     NULL,
 };
 

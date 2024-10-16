@@ -51,6 +51,7 @@
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/shm.h>
+#include <xcb/xinput.h>
 #include <xcb/xcb_image.h>
 #include <xcb/shape.h>
 #include <xcb/xcb_keysyms.h>
@@ -735,6 +736,23 @@ hostx_init(void)
         }
     } else {
         fprintf(stderr, "\nXephyr unable to use SHM XImages\n");
+    }
+
+    /* Xi touch event mask */
+    for (index = 0; index < HostX.n_screens; index++) {
+           KdScreenInfo *screen = HostX.screens[index];
+           EphyrScrPriv *scrpriv = screen->driver;
+           struct {
+                   xcb_input_event_mask_t head;
+                   xcb_input_xi_event_mask_t mask;
+           } xinput_mask = {
+                   .head = { .deviceid = XCB_INPUT_DEVICE_ALL_MASTER, .mask_len = 1 },
+                   .mask =
+                           XCB_INPUT_XI_EVENT_MASK_TOUCH_BEGIN |
+                           XCB_INPUT_XI_EVENT_MASK_TOUCH_END |
+                           XCB_INPUT_XI_EVENT_MASK_TOUCH_UPDATE,
+           };
+           xcb_input_xi_select_events(HostX.conn, scrpriv->win, 1, &xinput_mask.head);
     }
 
     xcb_flush(HostX.conn);
