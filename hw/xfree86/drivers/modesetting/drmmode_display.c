@@ -3677,7 +3677,12 @@ drmmode_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
     drmmode->fb_id = 0;
 
     if (!drmmode_create_bo(drmmode, &drmmode->front_bo,
-                           width, height, drmmode->kbpp, 0))
+                           width, height, drmmode->kbpp,
+#ifdef HAVE_GBM_BO_USE_FRONT_RENDERING
+                           GBM_BO_USE_FRONT_RENDERING))
+#else
+                           0))
+#endif
         goto fail;
 
     pitch = drmmode_bo_get_pitch(&drmmode->front_bo);
@@ -4458,7 +4463,12 @@ drmmode_create_initial_bos(ScrnInfoPtr pScrn, drmmode_ptr drmmode)
     width = pScrn->virtualX;
     height = pScrn->virtualY;
 
-    if (!drmmode_create_bo(drmmode, &drmmode->front_bo, width, height, bpp, 0))
+    if (!drmmode_create_bo(drmmode, &drmmode->front_bo, width, height, bpp,
+#ifdef HAVE_GBM_BO_USE_FRONT_RENDERING
+                           GBM_BO_USE_FRONT_RENDERING))
+#else
+                           0))
+#endif
         return FALSE;
     pScrn->displayWidth = drmmode_bo_get_pitch(&drmmode->front_bo) / cpp;
 
