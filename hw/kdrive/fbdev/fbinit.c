@@ -24,6 +24,7 @@
 #include <kdrive-config.h>
 #endif
 #include <fbdev.h>
+#include "glx_extinit.h"
 
 void
 InitCard(char *name)
@@ -31,9 +32,24 @@ InitCard(char *name)
     KdCardInfoAdd(&fbdevFuncs, 0);
 }
 
+static const ExtensionModule ephyrExtensions[] = {
+#ifdef GLXEXT
+ { GlxExtensionInit, "GLX", &noGlxExtension },
+#endif
+};
+
+static
+void ephyrExtensionInit(void)
+{
+    LoadExtensionList(ephyrExtensions, ARRAY_SIZE(ephyrExtensions), TRUE);
+}
+
 void
 InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 {
+    if (serverGeneration == 1)
+        ephyrExtensionInit();
+
     KdInitOutput(pScreenInfo, argc, argv);
 }
 
