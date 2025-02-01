@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, Oracle and/or its affiliates.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,7 +48,6 @@
 #include "compint.h"
 #include "xace.h"
 #include "protocol-versions.h"
-#include "extinit.h"
 
 static CARD8 CompositeReqCode;
 static DevPrivateKeyRec CompositeClientPrivateKeyRec;
@@ -130,7 +129,7 @@ ProcCompositeQueryVersion(ClientPtr client)
     do {								\
 	int err;							\
 	err = dixLookupResourceByType((void **) &pWindow, wid,	\
-				      RT_WINDOW, client, mode);		\
+				      X11_RESTYPE_WINDOW, client, mode);\
 	if (err != Success) {						\
 	    client->errorValue = wid;					\
 	    return err;							\
@@ -252,20 +251,20 @@ ProcCompositeNameWindowPixmap(ClientPtr client)
         return BadMatch;
 
     /* security creation/labeling check */
-    rc = XaceHook(XACE_RESOURCE_ACCESS, client, stuff->pixmap, RT_PIXMAP,
-                  pPixmap, RT_WINDOW, pWin, DixCreateAccess);
+    rc = XaceHookResourceAccess(client, stuff->pixmap, X11_RESTYPE_PIXMAP,
+                  pPixmap, X11_RESTYPE_WINDOW, pWin, DixCreateAccess);
     if (rc != Success)
         return rc;
 
     ++pPixmap->refcnt;
 
-    if (!AddResource(stuff->pixmap, RT_PIXMAP, (void *) pPixmap))
+    if (!AddResource(stuff->pixmap, X11_RESTYPE_PIXMAP, (void *) pPixmap))
         return BadAlloc;
 
     if (pScreen->NameWindowPixmap) {
         rc = pScreen->NameWindowPixmap(pWin, pPixmap, stuff->pixmap);
         if (rc != Success) {
-            FreeResource(stuff->pixmap, RT_NONE);
+            FreeResource(stuff->pixmap, X11_RESTYPE_NONE);
             return rc;
         }
     }
@@ -302,14 +301,15 @@ ProcCompositeGetOverlayWindow(ClientPtr client)
     cs = GetCompScreen(pScreen);
     if (cs->pOverlayWin == NULL)
         if (!compCreateOverlayWindow(pScreen)) {
-            FreeResource(pOc->resource, RT_NONE);
+            FreeResource(pOc->resource, X11_RESTYPE_NONE);
             return BadAlloc;
         }
 
-    rc = XaceHook(XACE_RESOURCE_ACCESS, client, cs->pOverlayWin->drawable.id,
-                  RT_WINDOW, cs->pOverlayWin, RT_NONE, NULL, DixGetAttrAccess);
+    rc = XaceHookResourceAccess(client, cs->pOverlayWin->drawable.id,
+                  X11_RESTYPE_WINDOW, cs->pOverlayWin, X11_RESTYPE_NONE,
+                  NULL, DixGetAttrAccess);
     if (rc != Success) {
-        FreeResource(pOc->resource, RT_NONE);
+        FreeResource(pOc->resource, X11_RESTYPE_NONE);
         return rc;
     }
 
@@ -349,7 +349,7 @@ ProcCompositeReleaseOverlayWindow(ClientPtr client)
         return BadMatch;
 
     /* The delete function will free the client structure */
-    FreeResource(pOc->resource, RT_NONE);
+    FreeResource(pOc->resource, X11_RESTYPE_NONE);
 
     return Success;
 }
@@ -375,7 +375,7 @@ ProcCompositeDispatch(ClientPtr client)
         return BadRequest;
 }
 
-static int
+static int _X_COLD
 SProcCompositeQueryVersion(ClientPtr client)
 {
     REQUEST(xCompositeQueryVersionReq);
@@ -387,7 +387,7 @@ SProcCompositeQueryVersion(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeRedirectWindow(ClientPtr client)
 {
     REQUEST(xCompositeRedirectWindowReq);
@@ -398,7 +398,7 @@ SProcCompositeRedirectWindow(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeRedirectSubwindows(ClientPtr client)
 {
     REQUEST(xCompositeRedirectSubwindowsReq);
@@ -409,7 +409,7 @@ SProcCompositeRedirectSubwindows(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeUnredirectWindow(ClientPtr client)
 {
     REQUEST(xCompositeUnredirectWindowReq);
@@ -420,7 +420,7 @@ SProcCompositeUnredirectWindow(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeUnredirectSubwindows(ClientPtr client)
 {
     REQUEST(xCompositeUnredirectSubwindowsReq);
@@ -431,7 +431,7 @@ SProcCompositeUnredirectSubwindows(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeCreateRegionFromBorderClip(ClientPtr client)
 {
     REQUEST(xCompositeCreateRegionFromBorderClipReq);
@@ -443,7 +443,7 @@ SProcCompositeCreateRegionFromBorderClip(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeNameWindowPixmap(ClientPtr client)
 {
     REQUEST(xCompositeNameWindowPixmapReq);
@@ -455,7 +455,7 @@ SProcCompositeNameWindowPixmap(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeGetOverlayWindow(ClientPtr client)
 {
     REQUEST(xCompositeGetOverlayWindowReq);
@@ -466,7 +466,7 @@ SProcCompositeGetOverlayWindow(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int
+static int _X_COLD
 SProcCompositeReleaseOverlayWindow(ClientPtr client)
 {
     REQUEST(xCompositeReleaseOverlayWindowReq);
@@ -477,17 +477,20 @@ SProcCompositeReleaseOverlayWindow(ClientPtr client)
     return (*ProcCompositeVector[stuff->compositeReqType]) (client);
 }
 
-static int (*SProcCompositeVector[CompositeNumberRequests]) (ClientPtr) = {
-SProcCompositeQueryVersion,
-        SProcCompositeRedirectWindow,
-        SProcCompositeRedirectSubwindows,
-        SProcCompositeUnredirectWindow,
-        SProcCompositeUnredirectSubwindows,
-        SProcCompositeCreateRegionFromBorderClip,
-        SProcCompositeNameWindowPixmap,
-        SProcCompositeGetOverlayWindow, SProcCompositeReleaseOverlayWindow,};
-
 static int
+(*SProcCompositeVector[CompositeNumberRequests]) (ClientPtr) = {
+    SProcCompositeQueryVersion,
+    SProcCompositeRedirectWindow,
+    SProcCompositeRedirectSubwindows,
+    SProcCompositeUnredirectWindow,
+    SProcCompositeUnredirectSubwindows,
+    SProcCompositeCreateRegionFromBorderClip,
+    SProcCompositeNameWindowPixmap,
+    SProcCompositeGetOverlayWindow,
+    SProcCompositeReleaseOverlayWindow,
+};
+
+static int _X_COLD
 SProcCompositeDispatch(ClientPtr client)
 {
     REQUEST(xReq);
@@ -512,7 +515,7 @@ GetCompositeWindowBytes(void *value, XID id, ResourceSizePtr size)
     /* account for redirection */
     if (window->redirectDraw != RedirectDrawNone)
     {
-        SizeType pixmapSizeFunc = GetResourceTypeSizeFunc(RT_PIXMAP);
+        SizeType pixmapSizeFunc = GetResourceTypeSizeFunc(X11_RESTYPE_PIXMAP);
         ResourceSizeRec pixmapSize = { 0, 0 };
         ScreenPtr screen = window->drawable.pScreen;
         PixmapPtr pixmap = screen->GetWindowPixmap(window);
@@ -553,8 +556,8 @@ CompositeExtensionInit(void)
     if (!CompositeClientWindowType)
         return;
 
-    coreGetWindowBytes = GetResourceTypeSizeFunc(RT_WINDOW);
-    SetResourceTypeSizeFunc(RT_WINDOW, GetCompositeWindowBytes);
+    coreGetWindowBytes = GetResourceTypeSizeFunc(X11_RESTYPE_WINDOW);
+    SetResourceTypeSizeFunc(X11_RESTYPE_WINDOW, GetCompositeWindowBytes);
 
     CompositeClientSubwindowsType = CreateNewResourceType
         (FreeCompositeClientSubwindows, "CompositeClientSubwindows");
@@ -725,7 +728,8 @@ PanoramiXCompositeNameWindowPixmap(ClientPtr client)
 
     FOR_NSCREENS(i) {
         rc = dixLookupResourceByType((void **) &pWin, win->info[i].id,
-                                     RT_WINDOW, client, DixGetAttrAccess);
+                                     X11_RESTYPE_WINDOW, client,
+                                     DixGetAttrAccess);
         if (rc != Success) {
             client->errorValue = stuff->window;
             free(newPix);
@@ -749,7 +753,7 @@ PanoramiXCompositeNameWindowPixmap(ClientPtr client)
             return BadMatch;
         }
 
-        if (!AddResource(newPix->info[i].id, RT_PIXMAP, (void *) pPixmap))
+        if (!AddResource(newPix->info[i].id, X11_RESTYPE_PIXMAP, (void *) pPixmap))
             return BadAlloc;
 
         ++pPixmap->refcnt;
@@ -793,7 +797,8 @@ PanoramiXCompositeGetOverlayWindow(ClientPtr client)
 
     FOR_NSCREENS_BACKWARD(i) {
         rc = dixLookupResourceByType((void **) &pWin, win->info[i].id,
-                                     RT_WINDOW, client, DixGetAttrAccess);
+                                     X11_RESTYPE_WINDOW, client,
+                                     DixGetAttrAccess);
         if (rc != Success) {
             client->errorValue = stuff->window;
             free(overlayWin);
@@ -817,17 +822,17 @@ PanoramiXCompositeGetOverlayWindow(ClientPtr client)
         cs = GetCompScreen(pScreen);
         if (cs->pOverlayWin == NULL)
             if (!compCreateOverlayWindow(pScreen)) {
-                FreeResource(pOc->resource, RT_NONE);
+                FreeResource(pOc->resource, X11_RESTYPE_NONE);
                 free(overlayWin);
                 return BadAlloc;
             }
 
-        rc = XaceHook(XACE_RESOURCE_ACCESS, client,
+        rc = XaceHookResourceAccess(client,
                       cs->pOverlayWin->drawable.id,
-                      RT_WINDOW, cs->pOverlayWin, RT_NONE, NULL,
+                      X11_RESTYPE_WINDOW, cs->pOverlayWin, X11_RESTYPE_NONE, NULL,
                       DixGetAttrAccess);
         if (rc != Success) {
-            FreeResource(pOc->resource, RT_NONE);
+            FreeResource(pOc->resource, X11_RESTYPE_NONE);
             free(overlayWin);
             return rc;
         }
@@ -895,7 +900,7 @@ PanoramiXCompositeReleaseOverlayWindow(ClientPtr client)
             return BadMatch;
 
         /* The delete function will free the client structure */
-        FreeResource(pOc->resource, RT_NONE);
+        FreeResource(pOc->resource, X11_RESTYPE_NONE);
     }
 
     return Success;

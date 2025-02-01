@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, Oracle and/or its affiliates.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -45,7 +45,15 @@
 #include <dix-config.h>
 #endif
 
+#include "dix.h"
+#if 0
+#include "os/osdep.h"
+#else
+#include "../os/osdep.h"
+#endif
+
 #include "compint.h"
+#include "compositeext_priv.h"
 
 #ifdef PANORAMIX
 #include "panoramiXsrv.h"
@@ -72,10 +80,17 @@ compCheckWindow(WindowPtr pWin, void *data)
     else {
         assert(pWinPixmap == pParentPixmap);
     }
-    assert(0 < pWinPixmap->refcnt && pWinPixmap->refcnt < 3);
-    assert(0 < pScreenPixmap->refcnt && pScreenPixmap->refcnt < 3);
-    if (pParentPixmap)
-        assert(0 <= pParentPixmap->refcnt && pParentPixmap->refcnt < 3);
+
+    assert(0 < pWinPixmap->refcnt)
+    assert(pWinPixmap->refcnt < 3);
+
+    assert(0 < pScreenPixmap->refcnt);
+    assert(pScreenPixmap->refcnt < 3);
+
+    if (pParentPixmap) {
+        assert(0 <= pParentPixmap->refcnt);
+        assert(pParentPixmap->refcnt < 3);
+    }
     return WT_WALKCHILDREN;
 }
 
@@ -89,6 +104,7 @@ compCheckTree(ScreenPtr pScreen)
 typedef struct _compPixmapVisit {
     WindowPtr pWindow;
     PixmapPtr pPixmap;
+    int bw;
 } CompPixmapVisitRec, *CompPixmapVisitPtr;
 
 static Bool
@@ -126,19 +142,20 @@ compSetPixmapVisitWindow(WindowPtr pWindow, void *data)
      */
     SetWinSize(pWindow);
     SetBorderSize(pWindow);
-    if (HasBorder(pWindow))
+    if (pVisit->bw)
         QueueWorkProc(compRepaintBorder, serverClient,
                       (void *) (intptr_t) pWindow->drawable.id);
     return WT_WALKCHILDREN;
 }
 
 void
-compSetPixmap(WindowPtr pWindow, PixmapPtr pPixmap)
+compSetPixmap(WindowPtr pWindow, PixmapPtr pPixmap, int bw)
 {
     CompPixmapVisitRec visitRec;
 
     visitRec.pWindow = pWindow;
     visitRec.pPixmap = pPixmap;
+    visitRec.bw = bw;
     TraverseTree(pWindow, compSetPixmapVisitWindow, (void *) &visitRec);
     compCheckTree(pWindow->drawable.pScreen);
 }
@@ -318,26 +335,21 @@ compClipNotify(WindowPtr pWin, int dx, int dy)
     }
 }
 
-/*
- * Returns TRUE if the window needs server-provided automatic redirect,
- * which is true if the child and parent aren't both regular or ARGB visuals
- */
-
-static Bool
+Bool
 compIsAlternateVisual(ScreenPtr pScreen, XID visual)
 {
     CompScreenPtr cs = GetCompScreen(pScreen);
     int i;
 
-    for (i = 0; i < cs->numAlternateVisuals; i++)
+    for (i = 0; cs && i < cs->numAlternateVisuals; i++)
         if (cs->alternateVisuals[i] == visual)
             return TRUE;
     return FALSE;
 }
 
-static Bool
-compIsImplicitRedirectException(ScreenPtr pScreen,
-                                XID parentVisual, XID winVisual)
+Bool
+CompositeIsImplicitRedirectException(ScreenPtr pScreen,
+                                     XID parentVisual, XID winVisual)
 {
     CompScreenPtr cs = GetCompScreen(pScreen);
     int i;
@@ -358,7 +370,7 @@ compImplicitRedirect(WindowPtr pWin, WindowPtr pParent)
         XID winVisual = wVisual(pWin);
         XID parentVisual = wVisual(pParent);
 
-        if (compIsImplicitRedirectException(pScreen, parentVisual, winVisual))
+        if (CompositeIsImplicitRedirectException(pScreen, parentVisual, winVisual))
             return FALSE;
 
         if (winVisual != parentVisual &&
@@ -435,6 +447,7 @@ compReparentWindow(WindowPtr pWin, WindowPtr pPriorParent)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
     CompScreenPtr cs = GetCompScreen(pScreen);
+    CompWindowPtr cw;
 
     pScreen->ReparentWindow = cs->ReparentWindow;
     /*
@@ -448,7 +461,7 @@ compReparentWindow(WindowPtr pWin, WindowPtr pPriorParent)
     compUnredirectOneSubwindow(pPriorParent, pWin);
     compRedirectOneSubwindow(pWin->parent, pWin);
     /*
-     * Add any implict redirect due to synthesized visual
+     * Add any implicit redirect due to synthesized visual
      */
     if (compImplicitRedirect(pWin, pWin->parent))
         compRedirectWindow(serverClient, pWin, CompositeRedirectAutomatic);
@@ -463,7 +476,8 @@ compReparentWindow(WindowPtr pWin, WindowPtr pPriorParent)
      * Reset pixmap pointers as appropriate
      */
     if (pWin->parent && pWin->redirectDraw == RedirectDrawNone)
-        compSetPixmap(pWin, (*pScreen->GetWindowPixmap) (pWin->parent));
+        compSetPixmap(pWin, (*pScreen->GetWindowPixmap) (pWin->parent),
+                      pWin->borderWidth);
     /*
      * Call down to next function
      */
@@ -471,6 +485,11 @@ compReparentWindow(WindowPtr pWin, WindowPtr pPriorParent)
         (*pScreen->ReparentWindow) (pWin, pPriorParent);
     cs->ReparentWindow = pScreen->ReparentWindow;
     pScreen->ReparentWindow = compReparentWindow;
+
+    cw = GetCompWindow(pWin);
+    if (pWin->damagedDescendants || (cw && cw->damaged))
+        compMarkAncestors(pWin);
+
     compCheckTree(pWin->drawable.pScreen);
 }
 
@@ -596,9 +615,9 @@ compDestroyWindow(WindowPtr pWin)
 
     pScreen->DestroyWindow = cs->DestroyWindow;
     while ((cw = GetCompWindow(pWin)))
-        FreeResource(cw->clients->id, RT_NONE);
+        FreeResource(cw->clients->id, X11_RESTYPE_NONE);
     while ((csw = GetCompSubwindows(pWin)))
-        FreeResource(csw->clients->id, RT_NONE);
+        FreeResource(csw->clients->id, X11_RESTYPE_NONE);
 
     if (pWin->redirectDraw != RedirectDrawNone) {
         PixmapPtr pPixmap = (*pScreen->GetWindowPixmap) (pWin);
@@ -609,6 +628,11 @@ compDestroyWindow(WindowPtr pWin)
     ret = (*pScreen->DestroyWindow) (pWin);
     cs->DestroyWindow = pScreen->DestroyWindow;
     pScreen->DestroyWindow = compDestroyWindow;
+
+    /* Did we just destroy the overlay window? */
+    if (pWin == cs->pOverlayWin)
+        cs->pOverlayWin = NULL;
+
 /*    compCheckTree (pWin->drawable.pScreen); can't check -- tree isn't good*/
     return ret;
 }

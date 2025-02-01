@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, Oracle and/or its affiliates.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -152,7 +152,7 @@ compCreateOverlayWindow(ScreenPtr pScreen)
     if (pWin == NULL)
         return FALSE;
 
-    if (!AddResource(pWin->drawable.id, RT_WINDOW, (void *) pWin))
+    if (!AddResource(pWin->drawable.id, X11_RESTYPE_WINDOW, (void *) pWin))
         return FALSE;
 
     MapWindow(pWin, serverClient);
@@ -169,5 +169,5 @@ compDestroyOverlayWindow(ScreenPtr pScreen)
     CompScreenPtr cs = GetCompScreen(pScreen);
 
     cs->pOverlayWin = NullWindow;
-    FreeResource(cs->overlayWid, RT_NONE);
+    FreeResource(cs->overlayWid, X11_RESTYPE_NONE);
 }

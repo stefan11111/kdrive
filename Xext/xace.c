@@ -63,6 +63,15 @@ XaceHookSelectionAccess(ClientPtr client, Selection ** ppSel, Mask access_mode)
     return rec.status;
 }
 
+int XaceHookResourceAccess(ClientPtr client, XID id, RESTYPE rtype, void *res,
+                           RESTYPE ptype, void *parent, Mask access_mode)
+{
+    XaceResourceAccessRec rec = { client, id, rtype, res, ptype, parent,
+                                  access_mode, Success };
+    CallCallbacks(&XaceHooks[XACE_RESOURCE_ACCESS], &rec);
+    return rec.status;
+}
+
 /* Entry point for hook functions.  Called by Xserver.
  */
 int

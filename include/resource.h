@@ -71,6 +71,19 @@ typedef uint32_t RESTYPE;
 
 /* types for Resource routines */
 
+/* prevent namespace clash with Windows */
+#define X11_RESTYPE_NONE        ((RESTYPE)0)
+#define X11_RESTYPE_WINDOW      ((RESTYPE)1|RC_DRAWABLE)
+#define X11_RESTYPE_PIXMAP      ((RESTYPE)2|RC_DRAWABLE)
+#define X11_RESTYPE_GC          ((RESTYPE)3)
+#define X11_RESTYPE_FONT        ((RESTYPE)4)
+#define X11_RESTYPE_CURSOR      ((RESTYPE)5)
+#define X11_RESTYPE_COLORMAP    ((RESTYPE)6)
+#define X11_RESTYPE_CMAPENTRY   ((RESTYPE)7)
+#define X11_RESTYPE_OTHERCLIENT ((RESTYPE)8|RC_NEVERRETAIN)
+#define X11_RESTYPE_PASSIVEGRAB ((RESTYPE)9|RC_NEVERRETAIN)
+#define X11_RESTYPE_LASTPREDEF  ((RESTYPE)9)
+
 #define RT_WINDOW	((RESTYPE)1|RC_DRAWABLE)
 #define RT_PIXMAP	((RESTYPE)2|RC_DRAWABLE)
 #define RT_GC		((RESTYPE)3)
