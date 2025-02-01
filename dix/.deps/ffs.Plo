@@ -1,3 +1,0 @@
-ffs.lo: ffs.c /usr/include/stdc-predef.h ../include/dix-config.h
-/usr/include/stdc-predef.h:
-../include/dix-config.h:

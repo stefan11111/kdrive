@@ -39,8 +39,6 @@
 
 #include <sys/stat.h>
 
-#include <sys/sysmacros.h>
-
 #ifndef K_OFF
 #define K_OFF 0x4
 #endif

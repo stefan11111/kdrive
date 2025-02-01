@@ -829,7 +829,7 @@ LIBDRI="dri >= 7.8.0"
 LIBDRM="libdrm >= 2.3.1"
 LIBEGL="egl"
 LIBGBM="gbm >= 10.2.0"
-LIBGL="gl"
+LIBGL="gl >= 7.1.0"
 LIBXEXT="xext >= 1.0.99.4"
 LIBXFONT="xfont2 >= 2.0.0"
 LIBXI="xi >= 1.2.99.1"
@@ -1173,7 +1173,7 @@ case "$DRI2,$HAVE_DRI2PROTO" in
 	yes,yes | auto,yes)
 		AC_DEFINE(DRI2, 1, [Build DRI2 extension])
 		DRI2=yes
-		LIBGL="gl"
+		LIBGL="gl >= 9.2.0"
 		SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES $DRI2PROTO"
 		;;
 esac

@@ -99,8 +99,6 @@
 
 #include "xkbsrv.h"
 
-#include <sys/sysmacros.h>
-
 /* Valuator verification macro */
 #define XI_VERIFY_VALUATORS(num_valuators)					\
 	if (num_valuators > MAX_VALUATORS) {					\
