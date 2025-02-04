@@ -735,6 +735,9 @@ MouseFirstProtocol(Kmouse * km, const char *prot)
             for (i = 0; i < NUM_PROT; i++)
                 ErrorF(" %s", kmouseProts[i]->name);
             ErrorF("\n");
+            km->i_prot = 0;
+            km->prot = kmouseProts[km->i_prot];
+            ErrorF("Falling back to %s\n", km->prot->name);
         }
         else {
             km->prot = kmouseProts[km->i_prot];
@@ -762,7 +765,7 @@ MouseNextProtocol(Kmouse * km)
     do {
         if (!km->prot)
             km->i_prot = 0;
-        else if (++km->i_prot == NUM_PROT)
+        else if (++km->i_prot >= NUM_PROT)
             km->i_prot = 0;
         km->prot = kmouseProts[km->i_prot];
     } while (km->prot->tty != km->tty);
@@ -913,7 +916,7 @@ MouseInit(KdPointerInfo * pi)
     km = (Kmouse *) malloc(sizeof(Kmouse));
     if (km) {
         km->iob.avail = km->iob.used = 0;
-        MouseFirstProtocol(km, pi->protocol ? pi->protocol : "exps/2");
+        MouseFirstProtocol(km, pi->protocol ? pi->protocol : "ps/2");
         /* MouseFirstProtocol sets state to MouseBroken for later protocol
          * checks. Skip these checks if a protocol was supplied */
         if (pi->protocol)
