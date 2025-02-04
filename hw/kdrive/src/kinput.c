@@ -107,6 +107,55 @@ extern const char *kdGlobalXkbLayout;
 extern const char *kdGlobalXkbVariant;
 extern const char *kdGlobalXkbOptions;
 
+#ifdef KDRIVE_KBD
+static void KdSigio(int sig)
+{
+        int i;
+
+        for (i = 0; i < kdNumInputFds; i++)
+                (*kdInputFds[i].read) (kdInputFds[i].fd, kdInputFds[i].closure);
+}
+
+static void KdBlockSigio(void)
+{
+        sigset_t set;
+
+        sigemptyset(&set);
+        sigaddset(&set, SIGIO);
+        sigprocmask(SIG_BLOCK, &set, 0);
+}
+
+static void KdUnblockSigio(void)
+{
+        sigset_t set;
+
+        sigemptyset(&set);
+        sigaddset(&set, SIGIO);
+        sigprocmask(SIG_UNBLOCK, &set, 0);
+}
+
+#undef VERIFY_SIGIO
+#ifdef VERIFY_SIGIO
+
+void KdAssertSigioBlocked(char *where)
+{
+        sigset_t set, old;
+
+        sigemptyset(&set);
+        sigprocmask(SIG_BLOCK, &set, &old);
+        if (!sigismember(&old, SIGIO))
+                ErrorF("SIGIO not blocked at %s\n", where);
+}
+
+#else
+
+#define KdAssertSigioBlocked(s)
+
+#endif
+
+static int kdnFds;
+#endif
+
 #ifdef FNONBLOCK
 #define NOBLOCK FNONBLOCK
 #else
@@ -144,8 +193,29 @@ KdNotifyFd(int fd, int ready, void *data)
 static void
 KdAddFd(int fd, int i)
 {
+#ifdef KDRIVE_KBD
+    struct sigaction act;
+
+    sigset_t set;
+
+    kdnFds++;
+    fcntl(fd, F_SETOWN, getpid());
+#endif
     KdNonBlockFd(fd);
     InputThreadRegisterDev(fd, KdNotifyFd, (void *) (intptr_t) i);
+#ifdef KDRIVE_KBD
+/*  AddEnabledDevice(fd); */
+    memset(&act, '\0', sizeof act);
+    act.sa_handler = KdSigio;
+
+    sigemptyset(&act.sa_mask);
+    sigaddset(&act.sa_mask, SIGIO);
+    sigaddset(&act.sa_mask, SIGALRM);
+    sigaddset(&act.sa_mask, SIGVTALRM);
+    sigaction(SIGIO, &act, 0);
+    sigemptyset(&set);
+    sigprocmask(SIG_SETMASK, &set, 0);
+#endif
 }
 
 static void
@@ -157,6 +227,16 @@ KdRemoveFd(int fd)
     flags = fcntl(fd, F_GETFL);
     flags &= ~(FASYNC | NOBLOCK);
     fcntl(fd, F_SETFL, flags);
+#ifdef KDRIVE_KBD
+    struct sigaction act;
+    kdnFds--;
+    if (kdnFds == 0) {
+        memset(&act, '\0', sizeof act);
+        act.sa_handler = SIG_IGN;
+        sigemptyset(&act.sa_mask);
+        sigaction(SIGIO, &act, 0);
+    }
+#endif
 }
 
 Bool
@@ -208,7 +288,11 @@ KdDisableInput(void)
     KdPointerInfo *pi;
     int found = 0, i = 0;
 
+#ifndef KDRIVE_KBD
     input_lock();
+#else
+    KdBlockSigio();
+#endif
 
     for (ki = kdKeyboards; ki; ki = ki->next) {
         if (ki->driver && ki->driver->Disable)
@@ -290,8 +374,11 @@ KdEnableInput(void)
         /* reset screen saver */
         NoticeEventTime (&ev, pi->dixdev);
     }
-
+#ifndef KDRIVE_KBD
     input_unlock();
+#else
+    KdUnblockSigio();
+#endif
 }
 
 static KdKeyboardDriver *
@@ -1305,8 +1392,12 @@ KdInitInput(void)
     KdKeyboardInfo *ki;
     struct KdConfigDevice *dev;
 
+#ifndef KDRIVE_KBD
     if (kdConfigPointers || kdConfigKeyboards)
         InputThreadPreInit();
+#else
+    InputThreadEnable = FALSE;
+#endif
 
     kdInputEnabled = TRUE;
 
@@ -1995,9 +2086,17 @@ KdWakeupHandler(ScreenPtr pScreen, int result)
         if (pi->timeoutPending) {
             if ((long) (GetTimeInMillis() - pi->emulationTimeout) >= 0) {
                 pi->timeoutPending = FALSE;
+#ifndef KDRIVE_KBD
                 input_lock();
+#else
+                KdBlockSigio();
+#endif
                 KdReceiveTimeout(pi);
+#ifndef KDRIVE_KBD
                 input_unlock();
+#else
+                KdUnblockSigio();
+#endif
             }
         }
     }
@@ -2094,10 +2193,18 @@ int KdCurScreen;                /* current event screen */
 static void
 KdWarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
 {
+#ifndef KDRIVE_KBD
     input_lock();
+#else
+    KdBlockSigio();
+#endif
     KdCurScreen = pScreen->myNum;
     miPointerWarpCursor(pDev, pScreen, x, y);
+#ifndef KDRIVE_KBD
     input_unlock();
+#else
+    KdUnblockSigio();
+#endif
 }
 
 miPointerScreenFuncRec kdPointerScreenFuncs = {
