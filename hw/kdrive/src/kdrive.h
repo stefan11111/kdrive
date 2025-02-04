@@ -229,7 +229,7 @@ void KdRemovePointerDriver(KdPointerDriver * driver);
 KdPointerInfo *KdNewPointer(void);
 void KdFreePointer(KdPointerInfo *);
 int KdAddPointer(KdPointerInfo * ki);
-int KdAddConfigPointer(char *pointer);
+int KdAddConfigPointer(const char *pointer);
 void KdRemovePointer(KdPointerInfo * ki);
 
 #define KD_KEY_COUNT 248
@@ -287,7 +287,7 @@ void KdAddKeyboardDriver(KdKeyboardDriver * driver);
 void KdRemoveKeyboardDriver(KdKeyboardDriver * driver);
 KdKeyboardInfo *KdNewKeyboard(void);
 void KdFreeKeyboard(KdKeyboardInfo * ki);
-int KdAddConfigKeyboard(char *pointer);
+int KdAddConfigKeyboard(const char *keyboard);
 int KdAddKeyboard(KdKeyboardInfo * ki);
 void KdRemoveKeyboard(KdKeyboardInfo * ki);
 
