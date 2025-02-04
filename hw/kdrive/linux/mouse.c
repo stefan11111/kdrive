@@ -911,8 +911,6 @@ MouseInit(KdPointerInfo * pi)
     if (fd < 0)
         return BadMatch;
 
-    close(fd);
-
     km = (Kmouse *) malloc(sizeof(Kmouse));
     if (km) {
         km->iob.avail = km->iob.used = 0;
@@ -923,7 +921,7 @@ MouseInit(KdPointerInfo * pi)
             km->state = MouseWorking;
         km->i_prot = 0;
         km->tty = isatty(fd);
-        km->iob.fd = -1;
+        km->iob.fd = fd;
         pi->driverPrivate = km;
     }
     else {
