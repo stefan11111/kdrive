@@ -166,10 +166,9 @@ MsFini(KdPointerInfo * pi)
 }
 
 KdPointerDriver MsMouseDriver = {
-    "ms",
-    MsInit,
-    MsEnable,
-    MsDisable,
-    MsFini,
-    NULL,
+    .name = "ms",
+    .Init = MsInit,
+    .Enable = MsEnable,
+    .Disable = MsDisable,
+    .Fini = MsFini,
 };

@@ -510,21 +510,19 @@ EvdevKbdFini(KdKeyboardInfo * ki)
 }
 
 KdPointerDriver LinuxEvdevMouseDriver = {
-    "evdev",
-    EvdevPtrInit,
-    EvdevPtrEnable,
-    EvdevPtrDisable,
-    EvdevPtrFini,
-    NULL,
+    .name = "evdev",
+    .Init = EvdevPtrInit,
+    .Enable = EvdevPtrEnable,
+    .Disable = EvdevPtrDisable,
+    .Fini = EvdevPtrFini,
 };
 
 KdKeyboardDriver LinuxEvdevKeyboardDriver = {
-    "evdev",
-    EvdevKbdInit,
-    EvdevKbdEnable,
-    EvdevKbdLeds,
-    EvdevKbdBell,
-    EvdevKbdDisable,
-    EvdevKbdFini,
-    NULL,
+    .name = "evdev",
+    .Init = EvdevKbdInit,
+    .Enable = EvdevKbdEnable,
+    .Leds = EvdevKbdLeds,
+    .Bell = EvdevKbdBell,
+    .Disable = EvdevKbdDisable,
+    .Fini = EvdevKbdFini,
 };

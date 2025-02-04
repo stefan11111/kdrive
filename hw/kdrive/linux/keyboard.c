@@ -342,7 +342,7 @@ LinuxKeyboardLeds(KdKeyboardInfo * ki, int leds)
 }
 
 KdKeyboardDriver LinuxKeyboardDriver = {
-    "keyboard",
+    .name = "keyboard",
     .PreInit = LinuxKeyboardPreInit,
     .Init = LinuxKeyboardInit,
     .Enable = LinuxKeyboardEnable,

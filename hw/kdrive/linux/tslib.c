@@ -185,10 +185,9 @@ TslibFini(KdPointerInfo * pi)
 }
 
 KdPointerDriver TsDriver = {
-    "tslib",
-    TslibInit,
-    TslibEnable,
-    TslibDisable,
-    TslibFini,
-    NULL,
+    .name = "tslib",
+    .Init = TslibInit,
+    .Enable = TslibEnable,
+    .Disable = TslibDisable,
+    .Fini = TslibFini,
 };

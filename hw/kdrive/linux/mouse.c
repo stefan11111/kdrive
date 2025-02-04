@@ -973,10 +973,9 @@ MouseFini(KdPointerInfo * pi)
 }
 
 KdPointerDriver LinuxMouseDriver = {
-    "mouse",
-    MouseInit,
-    MouseEnable,
-    MouseDisable,
-    MouseFini,
-    NULL,
+    .name = "mouse",
+    .Init = MouseInit,
+    .Enable = MouseEnable,
+    .Disable = MouseDisable,
+    .Fini = MouseFini,
 };

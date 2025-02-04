@@ -168,10 +168,9 @@ Ps2Fini(KdPointerInfo * pi)
 }
 
 KdPointerDriver Ps2MouseDriver = {
-    "ps2",
-    Ps2Init,
-    Ps2Enable,
-    Ps2Disable,
-    Ps2Fini,
-    NULL,
+    .name = "ps2",
+    .Init = Ps2Init,
+    .Enable = Ps2Enable,
+    .Disable = Ps2Disable,
+    .Fini = Ps2Fini,
 };
