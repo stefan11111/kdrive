@@ -310,6 +310,13 @@ LinuxKeyboardDisable(KdKeyboardInfo * ki)
 }
 
 static Status
+LinuxKeyboardPreInit(KdKeyboardInfo * ki)
+{
+    ki->xkbRules = strdup("base");
+    return Success;
+}
+
+static Status
 LinuxKeyboardInit(KdKeyboardInfo * ki)
 {
     if (!ki)
@@ -336,6 +343,7 @@ LinuxKeyboardLeds(KdKeyboardInfo * ki, int leds)
 
 KdKeyboardDriver LinuxKeyboardDriver = {
     "keyboard",
+    .PreInit = LinuxKeyboardPreInit,
     .Init = LinuxKeyboardInit,
     .Enable = LinuxKeyboardEnable,
     .Leds = LinuxKeyboardLeds,

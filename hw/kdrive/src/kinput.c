@@ -787,6 +787,10 @@ KdKeyboardProc(DeviceIntPtr pDevice, int onoff)
             return BadImplementation;
         }
 
+        if (ki->driver->PreInit) {
+            (*ki->driver->PreInit)(ki);
+        }
+
         memset(&rmlvo, 0, sizeof(rmlvo));
         rmlvo.rules = ki->xkbRules;
         rmlvo.model = ki->xkbModel;

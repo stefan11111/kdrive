@@ -247,6 +247,7 @@ typedef struct _KdKeyboardInfo KdKeyboardInfo;
 
 typedef struct _KdKeyboardDriver {
     const char *name;
+    Bool (*PreInit) (KdKeyboardInfo *);
     Bool (*Init) (KdKeyboardInfo *);
     Bool (*Enable) (KdKeyboardInfo *);
     void (*Leds) (KdKeyboardInfo *, int);
