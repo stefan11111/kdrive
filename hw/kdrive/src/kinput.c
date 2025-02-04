@@ -1405,6 +1405,17 @@ KdInitInput(void)
 
     kdInputEnabled = TRUE;
 
+#ifdef KDRIVE_KBD
+    if (!kdConfigKeyboards) {
+        KdAddConfigKeyboard("keyboard");
+    }
+#endif
+
+#ifdef KDRIVE_MOUSE
+    if (!kdConfigPointers) {
+        KdAddConfigPointer("mouse");
+    }
+#endif
     for (dev = kdConfigPointers; dev; dev = dev->next) {
         pi = KdParsePointer(dev->line);
         if (!pi)
