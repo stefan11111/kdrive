@@ -450,6 +450,7 @@ ps2Init(KdPointerInfo * pi)
     int id;
     unsigned char *init;
     int ninit;
+    int len;
 
     /* Send Intellimouse initialization sequence */
     MouseWriteBytes(km->iob.fd, intelli_init, sizeof(intelli_init),
@@ -465,20 +466,23 @@ ps2Init(KdPointerInfo * pi)
         init = wheel_3button_init;
         ninit = NINIT_IMPS2;
         km->prot = &imps2Prot;
+        len = sizeof(wheel_3button_init);
         break;
     case 4:
         init = wheel_5button_init;
         ninit = NINIT_EXPS2;
         km->prot = &exps2Prot;
+        len = sizeof(wheel_5button_init);
         break;
     default:
         init = ps2_init;
         ninit = NINIT_PS2;
         km->prot = &ps2Prot;
+        len = sizeof(ps2_init);
         break;
     }
     if (init)
-        MouseWriteBytes(km->iob.fd, init, sizeof(init), 100);
+        MouseWriteBytes(km->iob.fd, init, len, 100);
     /*
      * Flush out the available data to eliminate responses to the
      * initialization string.  Make sure any partial event is
