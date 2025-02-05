@@ -391,7 +391,7 @@ static unsigned char wheel_3button_init[] = {
     PSMC_SET_SAMPLING_RATE, 200,
     PSMC_SET_SAMPLING_RATE, 100,
     PSMC_SET_SAMPLING_RATE, 80,
-    PSMC_SEND_DEV_ID
+    PSMC_SEND_DEV_ID,
 };
 
 #define NINIT_IMPS2 4
@@ -403,7 +403,7 @@ static unsigned char wheel_5button_init[] = {
     PSMC_SET_SAMPLING_RATE, 200,
     PSMC_SET_SAMPLING_RATE, 200,
     PSMC_SET_SAMPLING_RATE, 80,
-    PSMC_SEND_DEV_ID
+    PSMC_SEND_DEV_ID,
 };
 
 #define NINIT_EXPS2 7
@@ -411,7 +411,7 @@ static unsigned char wheel_5button_init[] = {
 static unsigned char intelli_init[] = {
     PSMC_SET_SAMPLING_RATE, 200,
     PSMC_SET_SAMPLING_RATE, 100,
-    PSMC_SET_SAMPLING_RATE, 80
+    PSMC_SET_SAMPLING_RATE, 80,
 };
 
 #define NINIT_INTELLI	3
@@ -425,7 +425,7 @@ ps2SkipInit(KdPointerInfo * pi, int ninit, Bool ret_next)
 
     waiting = FALSE;
     while (ninit || ret_next) {
-        c = MouseReadByte(&km->iob, MOUSE_TIMEOUT);
+        c = MouseReadByte(&km->iob, 1); /* Minimum timeout like in xf86-input-mouse and tinyx */
         if (c == -1)
             break;
         /* look for ACK */
@@ -867,8 +867,6 @@ MouseRead(int mousePort, void *closure)
         }
     }
 }
-
-int MouseInputType;
 
 const char *kdefaultMouse[] = {
     "/dev/input/mice",
