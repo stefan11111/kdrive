@@ -3114,6 +3114,8 @@ CheckMotion(DeviceEvent *ev, DeviceIntPtr pDev)
 {
     WindowPtr prevSpriteWin, newSpriteWin;
     SpritePtr pSprite = pDev->spriteInfo->sprite;
+    if (!pSprite)
+        return FALSE;
 
     verify_internal_event((InternalEvent *) ev);
 

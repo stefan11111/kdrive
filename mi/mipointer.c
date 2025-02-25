@@ -280,6 +280,8 @@ miPointerSetCursorPosition(DeviceIntPtr pDev, ScreenPtr pScreen,
 {
     SetupScreen(pScreen);
     miPointerPtr pPointer = MIPOINTER(pDev);
+    if (!pPointer)
+        return FALSE;
 
     pPointer->generateEvent = generateEvent;
 
@@ -512,6 +514,8 @@ miPointerInvalidateSprite(DeviceIntPtr pDev)
     miPointerPtr pPointer;
 
     pPointer = MIPOINTER(pDev);
+    if (!pPointer)
+        return;
     pPointer->pSpriteCursor = (CursorPtr) 1;
 }
 
