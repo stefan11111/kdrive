@@ -3521,9 +3521,6 @@ xwl_seat_emulate_pointer_warp(struct xwl_seat *xwl_seat,
     if (!xwl_seat_can_emulate_pointer_warp(xwl_seat))
         return;
 
-    if (xwl_seat->x_cursor != NULL)
-        return;
-
     if (!xwl_seat->pointer_warp_emulator)
         xwl_seat_create_pointer_warp_emulator(xwl_seat);
 
@@ -3534,6 +3531,9 @@ xwl_seat_emulate_pointer_warp(struct xwl_seat *xwl_seat,
                                    xwl_window,
                                    sprite,
                                    x, y);
+
+    if (xwl_seat->x_cursor != NULL)
+        xwl_seat_destroy_pointer_warp_emulator(xwl_seat);
 }
 
 static Bool
