@@ -206,14 +206,6 @@ endforeach
 
 build_xvfb = get_option('xvfb')
 
-summary({
-        'Xwayland': build_xwayland,
-        'Xvfb': build_xvfb,
-    },
-    section: 'DDX',
-    bool_yn: true,
-)
-
 # IPv6 support
 have_AF_INET6 = cc.compiles('''
 #ifdef WIN32
