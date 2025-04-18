@@ -542,57 +542,6 @@ compNewPixmap(WindowPtr pWin, int x, int y, int w, int h)
 
     pPixmap->screen_x = x;
     pPixmap->screen_y = y;
-
-    if (pParent->drawable.depth == pWin->drawable.depth) {
-        GCPtr pGC = GetScratchGC(pWin->drawable.depth, pScreen);
-
-        if (pGC) {
-            ChangeGCVal val;
-
-            val.val = IncludeInferiors;
-            ChangeGC(NullClient, pGC, GCSubwindowMode, &val);
-            ValidateGC(&pPixmap->drawable, pGC);
-            (void) (*pGC->ops->CopyArea) (&pParent->drawable,
-                                          &pPixmap->drawable,
-                                          pGC,
-                                          x - pParent->drawable.x,
-                                          y - pParent->drawable.y,
-                                          w, h, 0, 0);
-            FreeScratchGC(pGC);
-        }
-    }
-    else {
-        PictFormatPtr pSrcFormat = PictureWindowFormat(pParent);
-        PictFormatPtr pDstFormat = PictureWindowFormat(pWin);
-        XID inferiors = IncludeInferiors;
-        int error;
-
-        PicturePtr pSrcPicture = CreatePicture(None,
-                                               &pParent->drawable,
-                                               pSrcFormat,
-                                               CPSubwindowMode,
-                                               &inferiors,
-                                               serverClient, &error);
-
-        PicturePtr pDstPicture = CreatePicture(None,
-                                               &pPixmap->drawable,
-                                               pDstFormat,
-                                               0, 0,
-                                               serverClient, &error);
-
-        if (pSrcPicture && pDstPicture) {
-            CompositePicture(PictOpSrc,
-                             pSrcPicture,
-                             NULL,
-                             pDstPicture,
-                             x - pParent->drawable.x,
-                             y - pParent->drawable.y, 0, 0, 0, 0, w, h);
-        }
-        if (pSrcPicture)
-            FreePicture(pSrcPicture, 0);
-        if (pDstPicture)
-            FreePicture(pDstPicture, 0);
-    }
     return pPixmap;
 }
 
