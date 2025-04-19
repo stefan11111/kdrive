@@ -61,8 +61,7 @@ SUBDIRS = \
 	exa \
 	$(GLAMOR_DIR) \
 	config \
-	hw \
-	test
+	kdrive
 
 if XORG
 aclocaldir = $(datadir)/aclocal
@@ -115,8 +114,7 @@ DIST_SUBDIRS = \
 	config \
 	dri3 \
 	present \
-	hw \
-	test
+	kdrive
 
 # gross hack
 relink: all
