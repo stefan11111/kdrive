@@ -55,6 +55,7 @@
 #include "xwayland-keyboard-grab-unstable-v1-client-protocol.h"
 #include "keyboard-shortcuts-inhibit-unstable-v1-client-protocol.h"
 #include "xdg-system-bell-v1-client-protocol.h"
+#include "pointer-warp-v1-client-protocol.h"
 
 #define SCROLL_AXIS_HORIZ 2
 #define SCROLL_AXIS_VERT 3
@@ -3123,6 +3124,15 @@ init_system_bell(struct xwl_screen *xwl_screen, uint32_t id, uint32_t version)
                           1);
 }
 
+static void
+init_pointer_warp(struct xwl_screen *xwl_screen, uint32_t id, uint32_t version)
+{
+     xwl_screen->pointer_warp =
+         wl_registry_bind(xwl_screen->registry, id,
+                          &wp_pointer_warp_v1_interface,
+                          1);
+}
+
 /* The compositor may send us wl_seat and its capabilities before sending e.g.
    relative_pointer_manager or pointer_gesture interfaces. This would result in
    devices being created in capabilities handler, but listeners not, because
@@ -3176,6 +3186,8 @@ input_handler(void *data, struct wl_registry *registry, uint32_t id,
         init_keyboard_shortcuts_inhibit(xwl_screen, id, version);
     } else if (strcmp(interface, xdg_system_bell_v1_interface.name) == 0) {
         init_system_bell(xwl_screen, id, version);
+    } else if (strcmp(interface, wp_pointer_warp_v1_interface.name) == 0) {
+        init_pointer_warp(xwl_screen, id, version);
     }
 }
 
@@ -3319,33 +3331,47 @@ xwl_seat_clear_touch(struct xwl_seat *xwl_seat, struct xwl_window *xwl_window)
     }
 }
 
+static Bool
+xwl_seat_get_warp_location(struct xwl_seat *xwl_seat, int x, int y,
+                           struct wl_surface **surface,
+                           wl_fixed_t *sx, wl_fixed_t *sy)
+{
+    WindowPtr window;
+
+    if (!xwl_seat->focus_window)
+        return FALSE;
+
+    window = xwl_seat->focus_window->toplevel;
+    if (x >= window->drawable.x ||
+        y >= window->drawable.y ||
+        x < (window->drawable.x + window->drawable.width) ||
+        y < (window->drawable.y + window->drawable.height)) {
+        *surface = xwl_seat->focus_window->surface;
+        *sx = wl_fixed_from_int(x - window->drawable.x);
+        *sy = wl_fixed_from_int(y - window->drawable.y);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 static void
 xwl_pointer_warp_emulator_set_fake_pos(struct xwl_pointer_warp_emulator *warp_emulator,
                                        int x,
                                        int y)
 {
+    struct xwl_seat *xwl_seat = warp_emulator->xwl_seat;
     struct zwp_locked_pointer_v1 *locked_pointer =
         warp_emulator->locked_pointer;
-    WindowPtr window;
-    int sx, sy;
+    struct wl_surface *surface;
+    wl_fixed_t sx, sy;
 
     if (!warp_emulator->locked_pointer)
         return;
 
-    if (!warp_emulator->xwl_seat->focus_window)
-        return;
-
-    window = warp_emulator->xwl_seat->focus_window->toplevel;
-    if (x >= window->drawable.x ||
-        y >= window->drawable.y ||
-        x < (window->drawable.x + window->drawable.width) ||
-        y < (window->drawable.y + window->drawable.height)) {
-        sx = x - window->drawable.x;
-        sy = y - window->drawable.y;
-        zwp_locked_pointer_v1_set_cursor_position_hint(locked_pointer,
-                                                       wl_fixed_from_int(sx),
-                                                       wl_fixed_from_int(sy));
-        wl_surface_commit(warp_emulator->xwl_seat->focus_window->surface);
+    if (xwl_seat_get_warp_location(xwl_seat, x, y, &surface, &sx, &sy)) {
+        zwp_locked_pointer_v1_set_cursor_position_hint(locked_pointer, sx, sy);
+        wl_surface_commit(surface);
     }
 }
 
@@ -3502,6 +3528,8 @@ xwl_seat_can_emulate_pointer_warp(struct xwl_seat *xwl_seat)
         return FALSE;
 
     xwl_screen = xwl_seat->xwl_screen;
+    if (xwl_screen->pointer_warp)
+        return TRUE;
 
     if (!xwl_screen->relative_pointer_manager)
         return FALSE;
@@ -3520,6 +3548,22 @@ xwl_seat_emulate_pointer_warp(struct xwl_seat *xwl_seat,
 {
     if (!xwl_seat_can_emulate_pointer_warp(xwl_seat))
         return;
+
+    if (xwl_seat->xwl_screen->pointer_warp) {
+        struct wp_pointer_warp_v1 *pointer_warp =
+            xwl_seat->xwl_screen->pointer_warp;
+        struct wl_surface *surface;
+        wl_fixed_t sx, sy;
+
+        if (xwl_seat_get_warp_location(xwl_seat, x, y, &surface, &sx, &sy)) {
+            wp_pointer_warp_v1_warp_pointer(pointer_warp, surface,
+                                            xwl_seat->wl_pointer, sx, sy,
+                                            xwl_seat->pointer_enter_serial);
+            wl_surface_commit(surface);
+        }
+
+        return;
+    }
 
     if (xwl_seat->x_cursor != NULL)
         return;

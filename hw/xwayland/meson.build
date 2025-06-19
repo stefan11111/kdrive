@@ -52,6 +52,7 @@ tearing_xml = join_paths(protodir, 'staging', 'tearing-control', 'tearing-contro
 fractional_scale_xml = join_paths(protodir, 'staging', 'fractional-scale', 'fractional-scale-v1.xml')
 syncobj_xml = join_paths(protodir, 'staging', 'linux-drm-syncobj', 'linux-drm-syncobj-v1.xml')
 system_bell_xml = join_paths(protodir, 'staging', 'xdg-system-bell', 'xdg-system-bell-v1.xml')
+pointer_warp_xml = join_paths(protodir, 'staging', 'pointer-warp', 'pointer-warp-v1.xml')
 
 proto_xml = [
     relative_xml,
@@ -70,6 +71,7 @@ proto_xml = [
     fractional_scale_xml,
     syncobj_xml,
     system_bell_xml,
+    pointer_warp_xml,
 ]
 
 client_header = generator(scanner,
