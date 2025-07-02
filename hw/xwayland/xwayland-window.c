@@ -1732,6 +1732,7 @@ xwl_window_dispose(struct xwl_window *xwl_window)
             xwl_seat->pointer_warp_emulator->locked_window == xwl_window)
             xwl_seat_destroy_pointer_warp_emulator(xwl_seat);
         xwl_seat_clear_touch(xwl_seat, xwl_window);
+        xwl_seat_clear_pending_pointer_lock(xwl_seat, xwl_window);
     }
 
     if (xwl_window_has_viewport_enabled(xwl_window))

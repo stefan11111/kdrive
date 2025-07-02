@@ -127,6 +127,14 @@ struct xwl_seat {
     struct xorg_list tablet_tools;
     struct xorg_list tablet_pads;
     struct zwp_xwayland_keyboard_grab_v1 *keyboard_grab;
+
+    struct {
+        Bool has_pending_pointer_warp;
+        Bool has_pending_confined_pointer;
+        struct xwl_window *xwl_window;
+        int pending_x;
+        int pending_y;
+    } pending_pointer_lock;
 };
 
 struct xwl_tablet {
@@ -215,4 +223,6 @@ void xwl_seat_unconfine_pointer(struct xwl_seat *xwl_seat);
 
 void xwl_screen_release_tablet_manager(struct xwl_screen *xwl_screen);
 
+void xwl_seat_clear_pending_pointer_lock(struct xwl_seat *xwl_seat,
+                                         struct xwl_window *xwl_window);
 #endif /* XWAYLAND_INPUT_H */
