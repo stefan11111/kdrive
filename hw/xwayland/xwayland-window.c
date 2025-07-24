@@ -1522,7 +1522,7 @@ ensure_surface_for_window(WindowPtr window)
             xwl_screen->tearing_control_manager, xwl_window->surface);
     }
 
-    xwl_window_set_input_region(xwl_window, wInputShape(window));
+    xwl_window_update_input_region(xwl_window);
 
     return xwl_window;
 
@@ -2023,32 +2023,58 @@ xwl_window_post_damage(struct xwl_window *xwl_window)
     DamageEmpty(window_get_damage(xwl_window->surface_window));
 }
 
+static RegionPtr
+xwl_window_effective_input_shape(struct xwl_window *xwl_window)
+{
+    RegionPtr explicit_bounding = wBoundingShape(xwl_window->toplevel);
+    RegionPtr explicit_input = wInputShape(xwl_window->toplevel);
+    RegionPtr effective_input = NULL;
+
+    if (explicit_bounding) {
+        effective_input = RegionCreate(NULL, 0);
+        RegionCopy(effective_input, explicit_bounding);
+    }
+
+    if (explicit_input) {
+        if (!effective_input) {
+            effective_input = RegionCreate(NULL, 0);
+            RegionCopy(effective_input, explicit_input);
+        } else {
+            RegionIntersect(effective_input, effective_input, explicit_input);
+        }
+    }
+
+    return effective_input;
+}
+
 void
-xwl_window_set_input_region(struct xwl_window *xwl_window,
-                            RegionPtr input_shape)
+xwl_window_update_input_region(struct xwl_window *xwl_window)
 {
     struct wl_region *region;
     BoxPtr box;
     int i;
+    RegionPtr shape;
 
-    if (!input_shape) {
+    shape = xwl_window_effective_input_shape(xwl_window);
+    if (!shape) {
         wl_surface_set_input_region(xwl_window->surface, NULL);
-        return;
+    } else {
+        region = wl_compositor_create_region(xwl_window->xwl_screen->compositor);
+        box = RegionRects(shape);
+
+        for (i = 0; i < RegionNumRects(shape); ++i, ++box) {
+            wl_region_add(region,
+                          box->x1,
+                          box->y1,
+                          box->x2 - box->x1,
+                          box->y2 - box->y1);
+        }
+
+        wl_surface_set_input_region(xwl_window->surface, region);
+        wl_region_destroy(region);
+
+        RegionDestroy(shape);
     }
-
-    region = wl_compositor_create_region(xwl_window->xwl_screen->compositor);
-    box = RegionRects(input_shape);
-
-    for (i = 0; i < RegionNumRects(input_shape); ++i, ++box) {
-        wl_region_add(region,
-                      box->x1,
-                      box->y1,
-                      box->x2 - box->x1,
-                      box->y2 - box->y1);
-    }
-
-    wl_surface_set_input_region(xwl_window->surface, region);
-    wl_region_destroy(region);
 }
 
 Bool
