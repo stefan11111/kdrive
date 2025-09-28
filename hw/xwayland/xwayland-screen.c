@@ -358,8 +358,8 @@ xwl_set_shape(WindowPtr window,
     if (!xwl_window)
         return;
 
-    if (kind == ShapeInput) {
-        xwl_window_set_input_region(xwl_window, wInputShape(window));
+    if (kind == ShapeInput || kind == ShapeBounding) {
+        xwl_window_update_input_region(xwl_window);
         if (xwl_window->allow_commits)
             wl_surface_commit(xwl_window->surface);
     }
