@@ -4355,13 +4355,14 @@ _XkbSetNames(ClientPtr client, DeviceIntPtr dev, xkbSetNamesReq * stuff)
         tmp = (CARD32 *) (((char *) tmp) + XkbPaddedSize(stuff->nKTLevels));
         type = &xkb->map->types[stuff->firstKTLevel];
         for (i = 0; i < stuff->nKTLevels; i++, type++) {
-            if (width[i] > 0) {
-                if (type->level_names) {
-                    register unsigned n;
-
-                    for (n = 0; n < width[i]; n++) {
-                        type->level_names[n] = tmp[n];
-                    }
+            if (type->level_names) {
+                register unsigned n;
+                for (n = 0; n < width[i]; n++) {
+                    type->level_names[n] = tmp[n];
+                }
+                /* Reset other level names */
+                for (n = width[i]; n < type->num_levels; n++) {
+                    type->level_names[n] = None;
                 }
                 tmp += width[i];
             }
