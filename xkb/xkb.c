@@ -1730,7 +1730,6 @@ CheckKeySyms(ClientPtr client,
              CARD16 *symsPerKey, xkbSymMapWireDesc ** wireRtrn, int *errorRtrn, Bool doswap)
 {
     register unsigned i;
-    XkbSymMapPtr map;
     xkbSymMapWireDesc *wire = *wireRtrn;
 
     if (!(XkbKeySymsMask & req->present))
@@ -1782,21 +1781,6 @@ CheckKeySyms(ClientPtr client,
         wire = (xkbSymMapWireDesc *) &pSyms[wire->nSyms];
     }
 
-    map = &xkb->map->key_sym_map[i];
-    for (; i <= (unsigned) xkb->max_key_code; i++, map++) {
-        register int g, nG, w;
-
-        nG = XkbKeyNumGroups(xkb, i);
-        for (w = g = 0; g < nG; g++) {
-            if (map->kt_index[g] >= (unsigned) nTypes) {
-                *errorRtrn = _XkbErrCode4(0x18, i, g, map->kt_index[g]);
-                return 0;
-            }
-            if (mapWidths[map->kt_index[g]] > w)
-                w = mapWidths[map->kt_index[g]];
-        }
-        symsPerKey[i] = w * nG;
-    }
     *wireRtrn = wire;
     return 1;
 }
