@@ -2153,9 +2153,20 @@ SetKeySyms(ClientPtr client,
     changes->map.num_key_syms = (last - first + 1);
 
     s = 0;
-    for (i = xkb->min_key_code; i <= xkb->max_key_code; i++) {
+    oldMap = &xkb->map->key_sym_map[xkb->min_key_code];
+    for (i = xkb->min_key_code; i <= xkb->max_key_code; i++, oldMap++) {
         if (XkbKeyNumGroups(xkb, i) > s)
             s = XkbKeyNumGroups(xkb, i);
+        if (i >= first && i <= last) {
+            /* Skip keys that were explicitly updated */
+            continue;
+        }
+        for (unsigned char g = 0; g < XkbNumGroups(oldMap->group_info); g++) {
+            if (oldMap->kt_index[g] < xkb->map->num_types)
+                continue;
+            /* Deleted type: use an automatic type */
+            // TODO: implement fallback to automatic types
+        }
     }
     if (s != xkb->ctrls->num_groups) {
         xkbControlsNotify cn;
@@ -2486,6 +2497,7 @@ _XkbSetMapChecks(ClientPtr client, DeviceIntPtr dev, xkbSetMapReq * req,
     CARD16 symsPerKey[XkbMaxLegalKeyCode + 1] = { 0 };
     XkbSymMapPtr map;
     int i;
+    int max_changed_key;
 
     if (!dev->key)
         return 0;
@@ -2523,16 +2535,34 @@ _XkbSetMapChecks(ClientPtr client, DeviceIntPtr dev, xkbSetMapReq * req,
 	    return BadValue;
     }
 
+    max_changed_key = req->firstKeySym + req->nKeySyms;
+
     map = &xkb->map->key_sym_map[xkb->min_key_code];
     for (i = xkb->min_key_code; i < xkb->max_key_code; i++, map++) {
         register int g, ng, w;
 
+        if ((req->present & XkbKeySymsMask) &&
+            i >= req->firstKeySym && i < max_changed_key) {
+                /* Skip updated keys, since we do not know their type yet */
+                continue;
+        }
+
         ng = XkbNumGroups(map->group_info);
         for (w = g = 0; g < ng; g++) {
             if (map->kt_index[g] >= (unsigned) nTypes) {
+            // TODO: implement fallback to automatic types
+            // if (map->kt_index[g] >= (unsigned) nTypes &&
+            //     (!(req->present & XkbKeyTypesMask) ||
+            //      !(req->flags & XkbSetMapResizeTypes))) {
+                /* Key type was deleted without updating the key, which
+                 * is permitted only with a proper key types list update
+                 * and a fallback to one of the automatic types. */
                 client->errorValue = _XkbErrCode4(0x13, i, g, map->kt_index[g]);
                 return BadValue;
             }
+            /* NOTE: a key type may still have been moved or deleted if it is in
+             * the updated range. In that case we rely on the width check for
+             * symbols. */
             if (mapWidths[map->kt_index[g]] > w)
                 w = mapWidths[map->kt_index[g]];
         }
