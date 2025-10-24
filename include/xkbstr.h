@@ -235,15 +235,15 @@ typedef struct _XkbRedirectKeyAction {
     unsigned char vmods1;
 } XkbRedirectKeyAction;
 
-#define	XkbSARedirectVMods(a)		((((unsigned int)(a)->vmods1)<<8)|\
-					((unsigned int)(a)->vmods0))
+#define	XkbSARedirectVMods(a)		((((unsigned int)(a)->vmods0)<<8)|\
+					((unsigned int)(a)->vmods1))
 /* FIXME: This is blatantly not setting vmods.   Yeesh. */
-#define	XkbSARedirectSetVMods(a,m)	(((a)->vmods_mask1=(((m)>>8)&0xff)),\
-					 ((a)->vmods_mask0=((m)&0xff)))
-#define	XkbSARedirectVModsMask(a)	((((unsigned int)(a)->vmods_mask1)<<8)|\
-					((unsigned int)(a)->vmods_mask0))
-#define	XkbSARedirectSetVModsMask(a,m)	(((a)->vmods_mask1=(((m)>>8)&0xff)),\
-					 ((a)->vmods_mask0=((m)&0xff)))
+#define	XkbSARedirectSetVMods(a,m)	(((a)->vmods_mask0=(((m)>>8)&0xff)),\
+					 ((a)->vmods_mask1=((m)&0xff)))
+#define	XkbSARedirectVModsMask(a)	((((unsigned int)(a)->vmods_mask0)<<8)|\
+					((unsigned int)(a)->vmods_mask1))
+#define	XkbSARedirectSetVModsMask(a,m)	(((a)->vmods_mask0=(((m)>>8)&0xff)),\
+					 ((a)->vmods_mask1=((m)&0xff)))
 
 typedef struct _XkbDeviceBtnAction {
     unsigned char type;
