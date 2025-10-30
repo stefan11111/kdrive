@@ -551,6 +551,9 @@ registry_global(void *data, struct wl_registry *registry, uint32_t id,
         xwl_screen->fractional_scale_manager =
             wl_registry_bind(registry, id, &wp_fractional_scale_manager_v1_interface, 1);
     }
+    else if (strcmp(interface, "gamescope_private") == 0) {
+        xwl_screen->is_gamescope = TRUE;
+    }
 #ifdef XWL_HAS_GLAMOR
     else if (xwl_screen->glamor) {
         xwl_glamor_init_wl_registry(xwl_screen, registry, id, interface,
