@@ -866,6 +866,20 @@ glamor_render_format_is_supported(PicturePtr picture)
     }
 }
 
+/**
+* Returns whether a picture w/ a drawable can be replaced with a solid block
+* of pixels.
+*
+* This will be true if either of the dimensions are equal to 0.
+*/
+static Bool
+glamor_composite_can_replace_with_solid(PicturePtr picture)
+{
+    PixmapPtr pixmap = glamor_get_drawable_pixmap(picture->pDrawable);
+
+    return (!pixmap->drawable.width || !pixmap->drawable.height);
+}
+
 static Bool
 render_op_uses_src_alpha(CARD8 op)
 {
@@ -935,6 +949,13 @@ glamor_composite_choose_shader(CARD8 op,
         else
             goto fail;
     }
+    else if (glamor_composite_can_replace_with_solid(source)) {
+        key.source = SHADER_SOURCE_SOLID;
+        source_solid_color[0] = 0.0;
+        source_solid_color[1] = 0.0;
+        source_solid_color[2] = 0.0;
+        source_solid_color[3] = 0.0;
+    }
     else {
         if (PICT_FORMAT_A(source->format))
             key.source = SHADER_SOURCE_TEXTURE_ALPHA;
@@ -952,6 +973,9 @@ glamor_composite_choose_shader(CARD8 op,
             }
             else
                 goto fail;
+        }
+        else if (glamor_composite_can_replace_with_solid(mask)) {
+            key.mask = SHADER_MASK_NONE;
         }
         else {
             if (PICT_FORMAT_A(mask->format))
@@ -1570,13 +1594,7 @@ glamor_composite_clipped_region(CARD8 op,
     }
 
     /* XXX is it possible source mask have non-zero drawable.x/y? */
-    if (source
-        && ((!source->pDrawable
-             && (source->pSourcePict->type != SourcePictTypeSolidFill))
-            || (source->pDrawable
-                && !GLAMOR_PIXMAP_PRIV_HAS_FBO(source_pixmap_priv)
-                && (source_pixmap->drawable.width != width
-                    || source_pixmap->drawable.height != height)))) {
+    if (source && source->pSourcePict && source->pSourcePict->type != SourcePictTypeSolidFill) {
         temp_src =
             glamor_convert_gradient_picture(screen, source,
                                             extent->x1 + x_source - x_dest - dest->pDrawable->x,
@@ -1592,13 +1610,7 @@ glamor_composite_clipped_region(CARD8 op,
         y_temp_src = -extent->y1 + y_dest + dest->pDrawable->y;
     }
 
-    if (mask
-        &&
-        ((!mask->pDrawable
-          && (mask->pSourcePict->type != SourcePictTypeSolidFill))
-         || (mask->pDrawable && !GLAMOR_PIXMAP_PRIV_HAS_FBO(mask_pixmap_priv)
-             && (mask_pixmap->drawable.width != width
-                 || mask_pixmap->drawable.height != height)))) {
+    if (mask && mask->pSourcePict && mask->pSourcePict->type != SourcePictTypeSolidFill) {
         /* XXX if mask->pDrawable is the same as source->pDrawable, we have an opportunity
          * to do reduce one conversion. */
         temp_mask =
