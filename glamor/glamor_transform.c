@@ -33,7 +33,7 @@
  * clipping computations can be adjusted as appropriate
  */
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_set_destination_drawable(DrawablePtr     drawable,
                                 int             box_index,
                                 Bool            do_drawable_translate,
@@ -110,7 +110,7 @@ glamor_set_destination_drawable(DrawablePtr     drawable,
  * from the specified GC. Load the target color into the specified uniform
  */
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_set_color_depth(ScreenPtr      pScreen,
                        int            depth,
                        CARD32         pixel,
@@ -129,7 +129,7 @@ glamor_set_color_depth(ScreenPtr      pScreen,
     glUniform4fv(uniform, 1, color);
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_solid(DrawablePtr    drawable,
                  GCPtr          gc,
                  Bool           use_alu,
@@ -163,7 +163,7 @@ glamor_set_solid(DrawablePtr    drawable,
     return TRUE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_set_texture_pixmap(PixmapPtr texture, Bool destination_red)
 {
     glamor_pixmap_private *texture_priv;
@@ -187,7 +187,7 @@ glamor_set_texture_pixmap(PixmapPtr texture, Bool destination_red)
     return TRUE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_set_texture(PixmapPtr    texture,
                    Bool         destination_red,
                    int          off_x,
@@ -203,7 +203,7 @@ glamor_set_texture(PixmapPtr    texture,
     return TRUE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_tiled(DrawablePtr    drawable,
                  GCPtr          gc,
                  GLint          offset_uniform,
@@ -223,7 +223,7 @@ glamor_set_tiled(DrawablePtr    drawable,
                               size_inv_uniform);
 }
 
-static PixmapPtr
+static PixmapPtr GLAMOR_NONNULL_ARGS((1))
 glamor_get_stipple_pixmap(GCPtr gc)
 {
     glamor_gc_private *gc_priv = glamor_get_gc_private(gc);
@@ -281,7 +281,7 @@ bail:
     return NULL;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_stippled(DrawablePtr    drawable,
                     GCPtr          gc,
                     GLint          fg_uniform,

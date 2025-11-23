@@ -30,7 +30,7 @@
  * and downloading all of the FBOs into it.
  */
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prep_drawable_box(DrawablePtr drawable, glamor_access_t access, BoxPtr box)
 {
     ScreenPtr                   screen = drawable->pScreen;
@@ -150,7 +150,7 @@ glamor_prep_drawable_box(DrawablePtr drawable, glamor_access_t access, BoxPtr bo
  * if we were writing to it and then unbind it to release the memory
  */
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_finish_access(DrawablePtr drawable)
 {
     PixmapPtr pixmap = glamor_get_drawable_pixmap(drawable);
@@ -194,7 +194,7 @@ glamor_finish_access(DrawablePtr drawable)
     priv->prepared = FALSE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access(DrawablePtr drawable, glamor_access_t access)
 {
     BoxRec box;
@@ -206,7 +206,7 @@ glamor_prepare_access(DrawablePtr drawable, glamor_access_t access)
     return glamor_prep_drawable_box(drawable, access, &box);
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access_box(DrawablePtr drawable, glamor_access_t access,
                          int x, int y, int w, int h)
 {
@@ -271,7 +271,7 @@ glamor_finish_access_picture(PicturePtr picture)
  * in CPU memory again
  */
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access_gc(GCPtr gc)
 {
     switch (gc->fillStyle) {
@@ -288,7 +288,7 @@ glamor_prepare_access_gc(GCPtr gc)
 /*
  * Free any temporary CPU pixmaps for the GC
  */
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_finish_access_gc(GCPtr gc)
 {
     switch (gc->fillStyle) {

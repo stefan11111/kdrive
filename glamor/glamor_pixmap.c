@@ -35,7 +35,7 @@
  * the backing drawable. These coordinates are nonzero only for redirected
  * windows.
  */
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 3, 4))
 glamor_get_drawable_deltas(DrawablePtr drawable, PixmapPtr pixmap,
                            int *x, int *y)
 {
@@ -62,7 +62,7 @@ glamor_pixmap_fini(ScreenPtr screen)
 {
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_destination_pixmap_fbo(glamor_screen_private *glamor_priv,
                                   glamor_pixmap_fbo *fbo, int x0, int y0,
                                   int width, int height)
@@ -73,7 +73,7 @@ glamor_set_destination_pixmap_fbo(glamor_screen_private *glamor_priv,
     glViewport(x0, y0, width, height);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_set_destination_pixmap_priv_nc(glamor_screen_private *glamor_priv,
                                       PixmapPtr pixmap,
                                       glamor_pixmap_private *pixmap_priv)
@@ -84,7 +84,7 @@ glamor_set_destination_pixmap_priv_nc(glamor_screen_private *glamor_priv,
     glamor_set_destination_pixmap_fbo(glamor_priv, pixmap_priv->fbo, 0, 0, w, h);
 }
 
-int
+int GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_set_destination_pixmap_priv(glamor_screen_private *glamor_priv,
                                    PixmapPtr pixmap,
                                    glamor_pixmap_private *pixmap_priv)
@@ -96,7 +96,7 @@ glamor_set_destination_pixmap_priv(glamor_screen_private *glamor_priv,
     return 0;
 }
 
-int
+int GLAMOR_NONNULL_ARGS((1))
 glamor_set_destination_pixmap(PixmapPtr pixmap)
 {
     int err;
@@ -119,7 +119,7 @@ glamor_set_planemask(int depth, unsigned long planemask)
     return GL_FALSE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_set_alu(DrawablePtr drawable, unsigned char alu)
 {
     ScreenPtr screen = drawable->pScreen;

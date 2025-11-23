@@ -277,7 +277,7 @@ glamor_pixmap_detach_fbo(glamor_pixmap_private *pixmap_priv)
 }
 
 /* The pixmap must not be attached to another fbo. */
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_pixmap_attach_fbo(PixmapPtr pixmap, glamor_pixmap_fbo *fbo)
 {
     glamor_pixmap_private *pixmap_priv;
@@ -355,7 +355,7 @@ glamor_pixmap_ensure_fbo(PixmapPtr pixmap, int flag)
     return TRUE;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_pixmap_exchange_fbos(PixmapPtr front, PixmapPtr back)
 {
     glamor_pixmap_private *front_priv, *back_priv;

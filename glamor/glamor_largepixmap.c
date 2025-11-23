@@ -158,7 +158,7 @@ __glamor_compute_clipped_regions(int block_w,
  * compositing.
  */
 
-glamor_pixmap_clipped_regions *
+glamor_pixmap_clipped_regions * GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_compute_clipped_regions_ext(PixmapPtr pixmap,
                                    RegionPtr region,
                                    int *n_region,

@@ -38,7 +38,7 @@ static const glamor_facet glamor_facet_poly_glyph_blt = {
                 GLAMOR_POS(gl_Position, primitive)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_glyph_blt_gl(DrawablePtr drawable, GCPtr gc,
                          int start_x, int y, unsigned int nglyph,
                          CharInfoPtr *ppci, void *pglyph_base)
@@ -153,7 +153,7 @@ bail:
     return ret;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_glyph_blt(DrawablePtr drawable, GCPtr gc,
                       int start_x, int y, unsigned int nglyph,
                       CharInfoPtr *ppci, void *pglyph_base)
@@ -165,7 +165,7 @@ glamor_poly_glyph_blt(DrawablePtr drawable, GCPtr gc,
                    ppci, pglyph_base);
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_push_pixels_gl(GCPtr gc, PixmapPtr bitmap,
                       DrawablePtr drawable, int w, int h, int x, int y)
 {
@@ -249,7 +249,7 @@ bail:
     return ret;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_push_pixels(GCPtr pGC, PixmapPtr pBitmap,
                    DrawablePtr pDrawable, int w, int h, int x, int y)
 {

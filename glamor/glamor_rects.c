@@ -41,7 +41,7 @@ static const glamor_facet glamor_facet_polyfillrect_120 = {
                 GLAMOR_POS(gl_Position, primitive.xy)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_fill_rect_gl(DrawablePtr drawable,
                          GCPtr gc, int nrect, xRectangle *prect)
 {
@@ -173,7 +173,7 @@ bail:
     return ret;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_fill_rect_bail(DrawablePtr drawable,
                            GCPtr gc, int nrect, xRectangle *prect)
 {
@@ -187,7 +187,7 @@ glamor_poly_fill_rect_bail(DrawablePtr drawable,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_fill_rect(DrawablePtr drawable,
                       GCPtr gc, int nrect, xRectangle *prect)
 {

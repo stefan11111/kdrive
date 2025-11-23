@@ -74,7 +74,7 @@ static const glamor_facet glamor_facet_double_dash_lines = {
                   glamor_program_location_bg),
 };
 
-static PixmapPtr
+static PixmapPtr GLAMOR_NONNULL_ARGS((1))
 glamor_get_dash_pixmap(GCPtr gc)
 {
     glamor_gc_private *gc_priv = glamor_get_gc_private(gc);
@@ -129,7 +129,7 @@ bail:
     return NULL;
 }
 
-static glamor_program *
+static glamor_program * GLAMOR_NONNULL_ARGS((1, 2))
 glamor_dash_setup(DrawablePtr drawable, GCPtr gc)
 {
     ScreenPtr screen = drawable->pScreen;
@@ -199,7 +199,7 @@ bail:
     return NULL;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2, 3))
 glamor_dash_loop(DrawablePtr drawable, GCPtr gc, glamor_program *prog,
                  int n, GLenum mode)
 {
@@ -237,7 +237,7 @@ glamor_line_length(short x1, short y1, short x2, short y2)
     return max(abs(x2 - x1), abs(y2 - y1));
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_lines_dash_gl(DrawablePtr drawable, GCPtr gc,
                           int mode, int n, DDXPointPtr points)
 {
@@ -302,7 +302,7 @@ glamor_poly_lines_dash_gl(DrawablePtr drawable, GCPtr gc,
     return TRUE;
 }
 
-static short *
+static short * GLAMOR_NONNULL_ARGS((1))
 glamor_add_segment(short *v, short x1, short y1, short x2, short y2,
                    int dash_start, int dash_end)
 {
@@ -316,7 +316,7 @@ glamor_add_segment(short *v, short x1, short y1, short x2, short y2,
     return v + 6;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_segment_dash_gl(DrawablePtr drawable, GCPtr gc,
                             int nseg, xSegment *segs)
 {

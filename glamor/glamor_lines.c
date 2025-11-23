@@ -32,7 +32,7 @@ static const glamor_facet glamor_facet_poly_lines = {
                 GLAMOR_POS(gl_Position, primitive.xy)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_lines_solid_gl(DrawablePtr drawable, GCPtr gc,
                            int mode, int n, DDXPointPtr points)
 {
@@ -128,7 +128,7 @@ bail:
     return ret;
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_lines_gl(DrawablePtr drawable, GCPtr gc,
                      int mode, int n, DDXPointPtr points)
 {
@@ -150,7 +150,7 @@ glamor_poly_lines_gl(DrawablePtr drawable, GCPtr gc,
     }
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_lines_bail(DrawablePtr drawable, GCPtr gc,
                        int mode, int n, DDXPointPtr points)
 {
@@ -160,7 +160,7 @@ glamor_poly_lines_bail(DrawablePtr drawable, GCPtr gc,
     miPolylines(drawable, gc, mode, n, points);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_lines(DrawablePtr drawable, GCPtr gc,
                   int mode, int n, DDXPointPtr points)
 {

@@ -26,7 +26,7 @@
 /*
  * Write a region of bits into a drawable's backing pixmap
  */
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 8))
 glamor_upload_boxes(DrawablePtr drawable, BoxPtr in_boxes, int in_nbox,
                     int dx_src, int dy_src,
                     int dx_dst, int dy_dst,
@@ -120,7 +120,7 @@ glamor_upload_boxes(DrawablePtr drawable, BoxPtr in_boxes, int in_nbox,
  * Upload a region of data
  */
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 5))
 glamor_upload_region(DrawablePtr drawable, RegionPtr region,
                      int region_x, int region_y,
                      uint8_t *bits, uint32_t byte_stride)
@@ -134,7 +134,7 @@ glamor_upload_region(DrawablePtr drawable, RegionPtr region,
 /*
  * Read stuff from the drawable's backing pixmap FBOs and write to memory
  */
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 8))
 glamor_download_boxes(DrawablePtr drawable, BoxPtr in_boxes, int in_nbox,
                       int dx_src, int dy_src,
                       int dx_dst, int dy_dst,

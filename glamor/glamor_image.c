@@ -28,7 +28,7 @@
  * PutImage. Only does ZPixmap right now as other formats are quite a bit harder
  */
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2, 10))
 glamor_put_image_gl(DrawablePtr drawable, GCPtr gc, int depth, int x, int y,
                     int w, int h, int leftPad, int format, char *bits)
 {
@@ -93,7 +93,7 @@ glamor_put_image_bail(DrawablePtr drawable, GCPtr gc, int depth, int x, int y,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2, 10))
 glamor_put_image(DrawablePtr drawable, GCPtr gc, int depth, int x, int y,
                  int w, int h, int leftPad, int format, char *bits)
 {
@@ -102,7 +102,7 @@ glamor_put_image(DrawablePtr drawable, GCPtr gc, int depth, int x, int y,
     glamor_put_image_bail(drawable, gc, depth, x, y, w, h, leftPad, format, bits);
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 8))
 glamor_get_image_gl(DrawablePtr drawable, int x, int y, int w, int h,
                     unsigned int format, unsigned long plane_mask, char *d)
 {
@@ -143,7 +143,7 @@ bail:
     return FALSE;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 8))
 glamor_get_image_bail(DrawablePtr drawable, int x, int y, int w, int h,
                       unsigned int format, unsigned long plane_mask, char *d)
 {
@@ -152,7 +152,7 @@ glamor_get_image_bail(DrawablePtr drawable, int x, int y, int w, int h,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 8))
 glamor_get_image(DrawablePtr drawable, int x, int y, int w, int h,
                  unsigned int format, unsigned long plane_mask, char *d)
 {
