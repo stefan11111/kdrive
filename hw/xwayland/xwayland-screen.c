@@ -864,6 +864,13 @@ xwl_screen_update_global_surface_scale(struct xwl_screen *xwl_screen)
     return (xwl_screen->global_surface_scale != old_scale);
 }
 
+static void
+xwl_screen_cursor_no_limits(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor,
+                         BoxPtr pHotBox, BoxPtr pTopLeftBox) {
+    pTopLeftBox->x1 = pTopLeftBox->y1 = INT16_MIN;
+    pTopLeftBox->x2 = pTopLeftBox->y2 = INT16_MAX;
+}
+
 Bool
 xwl_screen_init(ScreenPtr pScreen, int argc, char **argv)
 {
@@ -1171,6 +1178,9 @@ xwl_screen_init(ScreenPtr pScreen, int argc, char **argv)
 
     pScreen->CursorWarpedTo = xwl_cursor_warped_to;
     pScreen->CursorConfinedTo = xwl_cursor_confined_to;
+
+    pScreen->CursorLimits = xwl_screen_cursor_no_limits;
+    pScreen->ConstrainCursorHarder = NULL;
 
     xwl_screen->allow_commits_prop = MakeAtom(allow_commits,
                                               strlen(allow_commits),
