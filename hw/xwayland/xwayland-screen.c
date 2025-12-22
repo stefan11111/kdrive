@@ -280,9 +280,8 @@ xwl_close_screen(ScreenPtr screen)
     return screen->CloseScreen(screen);
 }
 
-static struct xwl_seat *
-xwl_screen_get_default_seat(struct xwl_screen *xwl_screen)
-{
+struct xwl_seat *
+xwl_screen_get_default_seat(struct xwl_screen *xwl_screen) {
     if (xorg_list_is_empty(&xwl_screen->seat_list))
         return NULL;
 

@@ -75,7 +75,6 @@ struct xwl_screen {
     RealizeWindowProcPtr RealizeWindow;
     UnrealizeWindowProcPtr UnrealizeWindow;
     DestroyWindowProcPtr DestroyWindow;
-    XYToWindowProcPtr XYToWindow;
     SetWindowPixmapProcPtr SetWindowPixmap;
     ChangeWindowAttributesProcPtr ChangeWindowAttributes;
     ReparentWindowProcPtr ReparentWindow;
@@ -183,5 +182,6 @@ int xwl_screen_get_next_output_serial(struct xwl_screen * xwl_screen);
 void xwl_screen_lost_focus(struct xwl_screen *xwl_screen);
 Bool xwl_screen_update_global_surface_scale(struct xwl_screen *xwl_screen);
 Bool xwl_screen_should_use_fractional_scale(struct xwl_screen *xwl_screen);
+struct xwl_seat *xwl_screen_get_default_seat(struct xwl_screen *xwl_screen);
 
 #endif /* XWAYLAND_SCREEN_H */
