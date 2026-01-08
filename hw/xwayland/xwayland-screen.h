@@ -141,6 +141,7 @@ struct xwl_screen {
     struct glamor_context *glamor_ctx;
 
     Atom allow_commits_prop;
+    Atom net_wm_opaque_region_prop;
 
     /* The preferred GLVND vendor. If NULL, "mesa" is assumed. */
     const char *glvnd_vendor;

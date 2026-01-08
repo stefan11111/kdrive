@@ -117,8 +117,7 @@ struct xwl_window *xwl_window_from_window(WindowPtr window);
 
 Bool is_surface_from_xwl_window(struct wl_surface *surface);
 
-void xwl_window_update_property(struct xwl_window *xwl_window,
-                                PropertyStateRec *propstate);
+void xwl_window_update_property(PropertyStateRec *propstate);
 Bool xwl_window_is_toplevel(WindowPtr window);
 void xwl_window_check_resolution_change_emulation(struct xwl_window *xwl_window);
 void xwl_window_rootful_update_title(struct xwl_window *xwl_window);

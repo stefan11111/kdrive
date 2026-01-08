@@ -126,12 +126,17 @@ is_surface_from_xwl_window(struct wl_surface *surface)
 }
 
 static void
-xwl_window_set_allow_commits(struct xwl_window *xwl_window, Bool allow,
+xwl_window_set_allow_commits(WindowPtr window, Bool allow,
                              const char *debug_msg)
 {
-    struct xwl_screen *xwl_screen = xwl_window->xwl_screen;
+    struct xwl_window *xwl_window = xwl_window_get(window);
+    struct xwl_screen *xwl_screen;
     DamagePtr damage;
 
+    if (!xwl_window)
+        return;
+
+    xwl_screen = xwl_window->xwl_screen;
     xwl_window->allow_commits = allow;
     DebugF("XWAYLAND: win %d allow_commits = %d (%s)\n",
            xwl_window->toplevel->drawable.id, allow, debug_msg);
@@ -147,18 +152,19 @@ xwl_window_set_allow_commits(struct xwl_window *xwl_window, Bool allow,
 }
 
 static void
-xwl_window_set_allow_commits_from_property(struct xwl_window *xwl_window,
+xwl_window_set_allow_commits_from_property(WindowPtr window,
                                            PropertyPtr prop)
 {
     static Bool warned = FALSE;
+    struct xwl_screen *xwl_screen = xwl_screen_get(window->drawable.pScreen);
     CARD32 *propdata;
 
-    if (prop->propertyName != xwl_window->xwl_screen->allow_commits_prop)
+    if (prop->propertyName != xwl_screen->allow_commits_prop)
         FatalError("Xwayland internal error: prop mismatch in %s.\n", __func__);
 
     if (prop->type != XA_CARDINAL || prop->format != 32 || prop->size != 1) {
         /* Not properly set, so fall back to safe and glitchy */
-        xwl_window_set_allow_commits(xwl_window, TRUE, "WM fault");
+        xwl_window_set_allow_commits(window, TRUE, "WM fault");
 
         if (!warned) {
             LogMessageVerb(X_WARNING, 0, "Window manager is misusing property %s.\n",
@@ -169,20 +175,106 @@ xwl_window_set_allow_commits_from_property(struct xwl_window *xwl_window,
     }
 
     propdata = prop->data;
-    xwl_window_set_allow_commits(xwl_window, !!propdata[0], "from property");
+    xwl_window_set_allow_commits(window, !!propdata[0], "from property");
+}
+
+static Bool
+xwl_window_set_opaque_region(WindowPtr pWin, xRectangle *rects, int nrects)
+{
+    struct xwl_window *xwl_window;
+    struct xwl_screen *xwl_screen;
+    struct wl_region *region = NULL;
+    int scale;
+    xRectangle *pRect;
+    int n;
+
+    xwl_window = xwl_window_from_window(pWin);
+    if (!xwl_window)
+        return FALSE;
+
+    xwl_screen = xwl_window->xwl_screen;
+    scale = xwl_screen->global_surface_scale;
+
+    if (rects && nrects) {
+        region = wl_compositor_create_region(xwl_screen->compositor);
+        if (region == NULL) {
+            ErrorF("Failed creating region\n");
+            return FALSE;
+        }
+
+        for (pRect = rects, n= 0; n < nrects; pRect++, n++)
+            wl_region_add(region, pRect->x * scale,
+                                  pRect->y * scale,
+                                  pRect->width * scale,
+                                  pRect->height * scale);
+    }
+
+    wl_surface_set_opaque_region(xwl_window->surface, region);
+    if (region)
+        wl_region_destroy(region);
+
+    /* Commit now only if allowed and if the there's no pending damage */
+    if (xwl_window->allow_commits && xorg_list_is_empty(&xwl_window->link_damage))
+        wl_surface_commit(xwl_window->surface);
+
+    return TRUE;
+}
+
+static Bool
+xwl_window_set_opaque_region_from_property(WindowPtr pWin, PropertyPtr prop)
+{
+    struct xwl_window *xwl_window = xwl_window_from_window(pWin);
+    struct xwl_screen *xwl_screen;
+    xRectangle *rects;
+    CARD32 *propdata;
+    int n, nrects;
+
+    if (!xwl_window)
+        return FALSE;
+
+    xwl_screen = xwl_window->xwl_screen;
+    if (prop->propertyName != xwl_screen->net_wm_opaque_region_prop)
+        return FALSE;
+
+    if (prop->type != XA_CARDINAL || prop->format != 32 || prop->size == 0)
+        return FALSE;
+
+    nrects = prop->size / 4;
+    propdata = prop->data;
+
+    rects = XNFcallocarray(nrects, sizeof(xRectangle));
+    for (n = 0; n < nrects; n++) {
+        rects[n].x = *(propdata++);
+        rects[n].y = *(propdata++);
+        rects[n].width = *(propdata++);
+        rects[n].height = *(propdata++);
+    }
+    xwl_window_set_opaque_region(pWin, rects, nrects);
+    free(rects);
+
+    return TRUE;
 }
 
 void
-xwl_window_update_property(struct xwl_window *xwl_window,
-                           PropertyStateRec *propstate)
+xwl_window_update_property(PropertyStateRec *propstate)
 {
+    WindowPtr pWin = propstate->win;
+    struct xwl_screen *xwl_screen = xwl_screen_get(pWin->drawable.pScreen);
+    Atom property = propstate->prop->propertyName;
+
     switch (propstate->state) {
     case PropertyNewValue:
-        xwl_window_set_allow_commits_from_property(xwl_window, propstate->prop);
+        if (property == xwl_screen->allow_commits_prop)
+            xwl_window_set_allow_commits_from_property(pWin, propstate->prop);
+        else if (property == xwl_screen->net_wm_opaque_region_prop)
+            xwl_window_set_opaque_region_from_property(pWin, propstate->prop);
         break;
 
     case PropertyDelete:
-        xwl_window_set_allow_commits(xwl_window, TRUE, "property deleted");
+        if (property == xwl_screen->allow_commits_prop)
+            xwl_window_set_allow_commits(pWin, TRUE, "property deleted");
+        else if (property == xwl_screen->net_wm_opaque_region_prop)
+            xwl_window_set_opaque_region(pWin, NULL, 0);
         break;
 
     default:
@@ -724,9 +816,9 @@ xwl_window_init_allow_commits(struct xwl_window *xwl_window)
                             xwl_window->xwl_screen->allow_commits_prop,
                             serverClient, DixReadAccess);
     if (ret == Success && prop)
-        xwl_window_set_allow_commits_from_property(xwl_window, prop);
+        xwl_window_set_allow_commits_from_property(xwl_window->toplevel, prop);
     else
-        xwl_window_set_allow_commits(xwl_window, TRUE, "no property");
+        xwl_window_set_allow_commits(xwl_window->toplevel, TRUE, "no property");
 }
 
 static uint32_t
@@ -904,6 +996,7 @@ xwl_window_maybe_resize(struct xwl_window *xwl_window, double width, double heig
     struct xwl_output *xwl_output;
     double scale;
     RRModePtr mode;
+    xRectangle rect[1];
 
     /* Clamp the size */
     width = min(max(width, MIN_ROOTFUL_WIDTH), MAX_ROOTFUL_WIDTH);
@@ -915,6 +1008,12 @@ xwl_window_maybe_resize(struct xwl_window *xwl_window, double width, double heig
         width = round(width / scale) * scale;
         height = round(height / scale) * scale;
     }
+
+    rect[0].x = 0;
+    rect[0].y = 0;
+    rect[0].width = width;
+    rect[0].height = height;
+    xwl_window_set_opaque_region(xwl_window->toplevel, rect, 1);
 
     if (width == xwl_screen->width && height == xwl_screen->height)
         return;
@@ -1303,13 +1402,32 @@ static const struct wp_fractional_scale_v1_listener fractional_scale_listener = 
    wp_fractional_scale_preferred_scale,
 };
 
+static void
+xwl_window_init_net_wm_opaque_region(struct xwl_window *xwl_window)
+{
+    PropertyPtr prop = NULL;
+    WindowPtr client_toplevel;
+    int ret;
+
+    client_toplevel = window_get_client_toplevel(xwl_window->toplevel);
+    if (!client_toplevel)
+        client_toplevel = xwl_window->toplevel;
+
+    ret = dixLookupProperty(&prop, client_toplevel,
+                            xwl_window->xwl_screen->net_wm_opaque_region_prop,
+                            serverClient, DixReadAccess);
+    if (ret == Success && prop)
+        xwl_window_set_opaque_region_from_property(client_toplevel, prop);
+    else
+        xwl_window_set_opaque_region(xwl_window->toplevel, NULL, 0);
+}
+
 static Bool
 xwl_create_root_surface(struct xwl_window *xwl_window)
 {
     struct xwl_screen *xwl_screen = xwl_window->xwl_screen;
     WindowPtr window = xwl_window->toplevel;
-    struct wl_region *region;
-
+    xRectangle rect[1];
 
 #ifdef XWL_HAS_LIBDECOR
     if (xwl_screen->decorate) {
@@ -1361,16 +1479,12 @@ xwl_create_root_surface(struct xwl_window *xwl_window)
     xwl_window_rootful_set_app_id(xwl_window);
     wl_surface_commit(xwl_window->surface);
 
-    region = wl_compositor_create_region(xwl_screen->compositor);
-    if (region == NULL) {
-        ErrorF("Failed creating region\n");
+    rect[0].x = 0;
+    rect[0].y = 0;
+    rect[0].width = window->drawable.width;
+    rect[0].height = window->drawable.height;
+    if (!xwl_window_set_opaque_region(window, rect, 1))
         goto err_surf;
-    }
-
-    wl_region_add(region, 0, 0,
-                  window->drawable.width, window->drawable.height);
-    wl_surface_set_opaque_region(xwl_window->surface, region);
-    wl_region_destroy(region);
 
     return TRUE;
 
@@ -1504,6 +1618,8 @@ ensure_surface_for_window(WindowPtr window)
     xwl_window->viewport_scale_y = 1.0;
     xwl_window->surface_scale = 1;
     xorg_list_init(&xwl_window->xwl_output_list);
+    dixSetPrivate(&window->devPrivates, &xwl_window_private_key, xwl_window);
+
     xwl_window->surface = wl_compositor_create_surface(xwl_screen->compositor);
     if (xwl_window->surface == NULL) {
         ErrorF("wl_display_create_surface failed\n");
@@ -1532,7 +1648,6 @@ ensure_surface_for_window(WindowPtr window)
 
     compRedirectWindow(serverClient, window, CompositeRedirectManual);
 
-    dixSetPrivate(&window->devPrivates, &xwl_window_private_key, xwl_window);
     xorg_list_init(&xwl_window->link_damage);
     xorg_list_add(&xwl_window->link_window, &xwl_screen->window_list);
     xorg_list_init(&xwl_window->frame_callback_list);
@@ -1561,10 +1676,12 @@ ensure_surface_for_window(WindowPtr window)
     }
 
     xwl_window_set_input_region(xwl_window, wInputShape(window));
+    xwl_window_init_net_wm_opaque_region(xwl_window);
 
     return xwl_window;
 
 err:
+    dixSetPrivate(&window->devPrivates, &xwl_window_private_key, NULL);
     free(xwl_window);
     return NULL;
 }
