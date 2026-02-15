@@ -934,7 +934,8 @@ xwl_present_flip(present_vblank_ptr vblank, RegionPtr damage)
 
     if (xwl_window->tearing_control) {
         uint32_t hint;
-        if (event->options & PresentOptionAsyncMayTear)
+        /* Follow asynchronous Present requests for tearing hinting. */
+        if (event->options & (PresentOptionAsync | PresentOptionAsyncMayTear))
             hint = WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC;
         else
             hint = WP_TEARING_CONTROL_V1_PRESENTATION_HINT_VSYNC;
