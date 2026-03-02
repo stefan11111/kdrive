@@ -19,6 +19,7 @@ xephyr_dep = [
     dependency('xcb-keysyms'),
     dependency('xcb-randr'),
     dependency('xcb-xkb'),
+    dependency('xcb-xinput'),
 ]
 
 xephyr_glamor = []

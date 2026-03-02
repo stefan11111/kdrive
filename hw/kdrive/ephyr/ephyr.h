@@ -167,6 +167,9 @@ Bool
 Bool
  ephyrCreateColormap(ColormapPtr pmap);
 
+Bool
+ ephyrXiInit(void);
+
 #ifdef RANDR
 Bool
  ephyrRandRGetInfo(ScreenPtr pScreen, Rotation * rotations);
@@ -187,6 +190,8 @@ void
  ephyrUpdateModifierState(unsigned int state);
 
 extern KdPointerDriver EphyrMouseDriver;
+
+extern KdTouchDriver EphyrTouchDriver;
 
 extern KdKeyboardDriver EphyrKeyboardDriver;
 

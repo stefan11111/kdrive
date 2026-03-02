@@ -35,6 +35,7 @@ extern Bool EphyrWantGrayScale;
 extern Bool EphyrWantResize;
 extern Bool EphyrWantNoHostGrab;
 extern Bool kdHasPointer;
+extern Bool kdHasTouch;
 extern Bool kdHasKbd;
 extern Bool ephyr_glamor, ephyr_glamor_gles2, ephyr_glamor_skip_present;
 
@@ -69,9 +70,11 @@ InitInput(int argc, char **argv)
 {
     KdKeyboardInfo *ki;
     KdPointerInfo *pi;
+    KdTouchInfo *ti;
 
     KdAddKeyboardDriver(&EphyrKeyboardDriver);
     KdAddPointerDriver(&EphyrMouseDriver);
+    KdAddTouchDriver(&EphyrTouchDriver);
 
     if (!kdHasKbd) {
         ki = KdNewKeyboard();
@@ -88,6 +91,14 @@ InitInput(int argc, char **argv)
         pi->driver = &EphyrMouseDriver;
         KdAddPointer(pi);
     }
+
+   if (!kdHasTouch) {
+       ti = KdNewTouch();
+       if (!ti)
+           FatalError("Couldn't create Xephyr touch\n");
+       ti->driver = &EphyrTouchDriver;
+       KdAddTouch(ti);
+   }
 
     KdInitInput();
 }

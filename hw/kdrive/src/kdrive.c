@@ -80,6 +80,7 @@ static int kdSubpixelOrder;
 static char *kdSwitchCmd;
 static DDXPointRec kdOrigin;
 Bool kdHasPointer = FALSE;
+Bool kdHasTouch = FALSE;
 Bool kdHasKbd = FALSE;
 const char *kdGlobalXkbRules = NULL;
 const char *kdGlobalXkbModel = NULL;

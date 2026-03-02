@@ -63,11 +63,13 @@ struct KdConfigDevice {
 /* kdKeyboards and kdPointers hold all the real devices. */
 static KdKeyboardInfo *kdKeyboards = NULL;
 static KdPointerInfo *kdPointers = NULL;
+static KdTouchInfo *kdTouchs = NULL;
 static struct KdConfigDevice *kdConfigKeyboards = NULL;
 static struct KdConfigDevice *kdConfigPointers = NULL;
 
 static KdKeyboardDriver *kdKeyboardDrivers = NULL;
 static KdPointerDriver *kdPointerDrivers = NULL;
+static KdTouchDriver *kdTouchDrivers = NULL;
 
 static Bool kdInputEnabled;
 static Bool kdOffScreen;
@@ -350,6 +352,171 @@ KdPointerProc(DeviceIntPtr pDevice, int onoff)
 
     /* NOTREACHED */
     return BadImplementation;
+}
+
+static KdTouchDriver *
+KdFindTouchDriver(const char *name)
+{
+    KdTouchDriver *ret;
+
+    /* ask a stupid question ... */
+    if (!name)
+        return NULL;
+
+    for (ret = kdTouchDrivers; ret; ret = ret->next) {
+        if (strcmp(ret->name, name) == 0)
+            return ret;
+    }
+
+    return NULL;
+}
+
+static int
+KdTouchProc(DeviceIntPtr pDevice, int onoff)
+{
+    DevicePtr pDev = (DevicePtr) pDevice;
+    KdTouchInfo *ti;
+    Atom xiclass;
+
+    if (!pDev)
+        return BadImplementation;
+
+    for (ti = kdTouchs; ti; ti = ti->next) {
+        if (ti->dixdev && ti->dixdev->id == pDevice->id)
+            break;
+    }
+
+    if (!ti || !ti->dixdev || ti->dixdev->id != pDevice->id) {
+        ErrorF("[KdTouchProc] Failed to find pointer for device %d!\n",
+               pDevice->id);
+        return BadImplementation;
+    }
+
+#define NTOUCHPOINTS 20
+#define NBUTTONS 1
+#define NAXES 2
+    Atom btn_labels[NBUTTONS] = { 0 };
+    Atom axes_labels[NAXES] = { 0 };
+    BYTE map[NBUTTONS + 1] = { 0 };
+
+    switch (onoff) {
+    case DEVICE_INIT:
+        ErrorF("initialising touch %s ...\n", ti->name);
+
+        if (!ti->driver) {
+            if (!ti->driverPrivate) {
+                ErrorF("no driver specified for touch device \"%s\" (%s)\n",
+                       ti->name ? ti->name : "(unnamed)", ti->path);
+                return BadImplementation;
+            }
+
+            ti->driver = KdFindTouchDriver(ti->driverPrivate);
+            if (!ti->driver) {
+                ErrorF("Couldn't find touch driver %s\n",
+                       ti->driverPrivate ? (char *) ti->driverPrivate :
+                       "(unnamed)");
+                return !Success;
+            }
+            free(ti->driverPrivate);
+            ti->driverPrivate = NULL;
+        }
+
+        if (!ti->driver->Init) {
+            ErrorF("no init function\n");
+            return BadImplementation;
+        }
+
+        if ((*ti->driver->Init) (ti) != Success) {
+            return !Success;
+        }
+
+        pDev->on = FALSE;
+
+        axes_labels[0] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_MT_POSITION_X);
+        axes_labels[1] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_MT_POSITION_Y);
+
+        if (!InitValuatorClassDeviceStruct(pDevice, NAXES, axes_labels,
+                                           GetMotionHistorySize(), Absolute))
+            return BadValue;
+
+        if (!InitButtonClassDeviceStruct(pDevice, NBUTTONS, btn_labels, map))
+            return BadValue;
+
+        if (!InitTouchClassDeviceStruct(pDevice, NTOUCHPOINTS,
+                                        XIDirectTouch, NAXES))
+            return BadValue;
+
+        /* Valuators */
+        InitValuatorAxisStruct(pDevice, 0, axes_labels[0],
+                               0, 0xFFFF, 10000, 0, 10000, Absolute);
+        InitValuatorAxisStruct(pDevice, 1, axes_labels[1],
+                               0, 0xFFFF, 10000, 0, 10000, Absolute);
+
+       xiclass = AtomFromName(XI_TOUCHSCREEN);
+        AssignTypeAndName(ti->dixdev, xiclass,
+                          ti->name ? ti->name : "Generic KDrive Touch");
+
+        return Success;
+
+    case DEVICE_ON:
+        if (pDev->on == TRUE)
+            return Success;
+
+        if (!ti->driver->Enable) {
+            ErrorF("no enable function\n");
+            return BadImplementation;
+        }
+
+        if ((*ti->driver->Enable) (ti) == Success) {
+            pDev->on = TRUE;
+            return Success;
+        }
+        else {
+            return BadImplementation;
+        }
+
+        return Success;
+
+    case DEVICE_OFF:
+       if (pDev->on == FALSE) {
+            return Success;
+        }
+
+        if (!ti->driver->Disable) {
+            return BadImplementation;
+        }
+        else {
+            (*ti->driver->Disable) (ti);
+            pDev->on = FALSE;
+            return Success;
+        }
+
+        return Success;
+
+    case DEVICE_CLOSE:
+       if (pDev->on) {
+            if (!ti->driver->Disable) {
+                return BadImplementation;
+            }
+            (*ti->driver->Disable) (ti);
+            pDev->on = FALSE;
+        }
+
+        if (!ti->driver->Fini)
+            return BadImplementation;
+
+        (*ti->driver->Fini) (ti);
+
+        KdRemoveTouch(ti);
+
+        return Success;
+
+    }
+
+    return BadMatch;
+#undef NAXES
+#undef NBUTTONS
+#undef NTOUCHPOINTS
 }
 
 static void
@@ -641,6 +808,37 @@ KdRemovePointerDriver(KdPointerDriver * driver)
 }
 
 void
+KdAddTouchDriver(KdTouchDriver * driver)
+{
+    KdTouchDriver **prev;
+
+    if (!driver)
+        return;
+
+    for (prev = &kdTouchDrivers; *prev; prev = &(*prev)->next) {
+        if (*prev == driver)
+            return;
+    }
+    *prev = driver;
+}
+
+void
+KdRemoveTouchDriver(KdTouchDriver * driver)
+{
+    KdTouchDriver *tmp;
+
+    if (!driver)
+        return;
+
+    for (tmp = kdTouchDrivers; tmp; tmp = tmp->next) {
+        if (tmp->next == driver)
+            tmp->next = driver->next;
+    }
+    if (tmp == driver)
+        tmp = NULL;
+}
+
+void
 KdAddKeyboardDriver(KdKeyboardDriver * driver)
 {
     KdKeyboardDriver **prev;
@@ -825,6 +1023,47 @@ KdRemovePointer(KdPointerInfo * pi)
     KdFreePointer(pi);
 }
 
+int
+KdAddTouch(KdTouchInfo * ti)
+{
+    KdTouchInfo **prev;
+
+    if (!ti)
+        return Success;
+
+    ti->mouseState = start;
+    ti->eventHeld = FALSE;
+
+    ti->dixdev = AddInputDevice(serverClient, KdTouchProc, TRUE);
+    if (!ti->dixdev) {
+        ErrorF("Couldn't add touch device %s\n",
+               ti->name ? ti->name : "(unnamed)");
+        return BadDevice;
+    }
+
+    for (prev = &kdTouchs; *prev; prev = &(*prev)->next);
+    *prev = ti;
+
+    return Success;
+}
+
+void
+KdRemoveTouch(KdTouchInfo * ti)
+{
+    KdTouchInfo **prev;
+
+    if (!ti)
+        return;
+
+    for (prev = &kdTouchs; *prev; prev = &(*prev)->next) {
+        if (*prev == ti) {
+            *prev = ti->next;
+            break;
+        }
+    }
+
+    KdFreeTouch(ti);
+}
 /*
  * You can call your kdriver server with something like:
  * $ ./hw/kdrive/yourserver/X :1 -mouse evdev,,device=/dev/input/event4 -keybd
@@ -1605,6 +1844,23 @@ _KdEnqueuePointerEvent(KdPointerInfo * pi, int type, int x, int y, int z,
 }
 
 static void
+_KdEnqueueTouchEvent(KdTouchInfo * ti, int type, int x, int y,
+                       uint32_t touchid, Bool force)
+{
+    ValuatorMask mask;
+
+    double dx=0, dy=0;
+    dx = x;
+    dy = y;
+    valuator_mask_zero(&mask);
+    valuator_mask_set_double(&mask, 0, dx);
+    valuator_mask_set_double(&mask, 1, dy);
+
+    QueueTouchEvents(ti->dixdev, type, touchid, 0, &mask);
+}
+
+
+static void
 KdReceiveTimeout(KdPointerInfo * pi)
 {
     KdRunMouseMachine(pi, timeout, 0, 0, 0, 0, 0, 0);
@@ -1743,6 +1999,30 @@ KdEnqueuePointerEvent(KdPointerInfo * pi, unsigned long flags, int rx, int ry,
     }
 
     pi->buttonState = buttons;
+}
+
+void
+KdEnqueueTouchEvent(KdTouchInfo * ti, unsigned long type, int rx, int ry,
+                      int touchid)
+{
+    int x, y;
+    int (*matrix)[3] = kdPointerMatrix.matrix;
+
+    if (!ti)
+        return;
+
+    /* we don't need to transform z, so we don't. */
+    if (ti->transformCoordinates) {
+        x = matrix[0][0] * rx + matrix[0][1] * ry + matrix[0][2];
+        y = matrix[1][0] * rx + matrix[1][1] * ry + matrix[1][2];
+    }
+    else {
+        x = rx;
+        y = ry;
+    }
+
+    _KdEnqueueTouchEvent(ti, type, x, y, touchid,
+                             FALSE);
 }
 
 void
