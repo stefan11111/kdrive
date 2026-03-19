@@ -6,8 +6,10 @@ set -o xtrace
 # Packages which are needed by this script, but not for the xserver build
 EPHEMERAL="
 	libcairo2-dev
+	libevdev-dev
 	libexpat-dev
 	libgles2-mesa-dev
+	libinput-dev
 	libxkbcommon-dev
 	x11-utils
 	x11-xserver-utils
@@ -27,9 +29,7 @@ apt-get install -y \
 	build-essential \
 	ca-certificates \
 	ccache \
-	dpkg-dev \
 	flex \
-	gcc-mingw-w64-i686 \
 	git \
 	libaudit-dev \
 	libbsd-dev \
@@ -48,14 +48,12 @@ apt-get install -y \
 	libgles2 \
 	libglx-mesa0 \
 	libinput10 \
-	libinput-dev \
 	libnvidia-egl-wayland-dev \
 	libpango1.0-0 \
 	libpango1.0-dev \
 	libpciaccess-dev \
 	libpixman-1-dev \
 	libselinux1-dev \
-	libspice-protocol-dev \
 	libsystemd-dev \
 	libtool \
 	libudev-dev \
@@ -107,11 +105,12 @@ apt-get install -y \
 	libxv-dev \
 	libxvmc-dev \
 	libxxf86vm-dev \
-	libz-mingw-w64-dev \
 	linux-libc-dev/bullseye-backports \
 	mesa-common-dev \
 	meson/bullseye-backports \
-	mingw-w64-tools \
+	linux-libc-dev/bullseye-backports \
+	mesa-common-dev \
+	meson \
 	nettle-dev \
 	pkg-config \
 	python3-attr \
@@ -126,8 +125,6 @@ apt-get install -y \
 	xkb-data \
 	xtrans-dev \
 	xutils-dev
-
-.gitlab-ci/cross-prereqs-build.sh i686-w64-mingw32
 
 cd /root
 

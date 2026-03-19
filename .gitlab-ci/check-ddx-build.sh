@@ -16,10 +16,8 @@ if [[ -z "$MESON_BUILDDIR" ]]; then
     exit 1
 fi
 
-[[ "$BUILD_XEPHYR" == true ]]   && check_executable "hw/kdrive/ephyr/Xephyr"
-[[ "$BUILD_XNEST" == true ]]    && check_executable "hw/xnest/Xnest"
-[[ "$BUILD_XORG" == true ]]     && check_executable "hw/xfree86/Xorg"
 [[ "$BUILD_XVFB" == true ]]     && check_executable "hw/vfb/Xvfb"
-[[ "$BUILD_XWAYLAND" == true ]] && check_executable "hw/xwayland/Xwayland"
+# Xwayland is not optional
+check_executable "hw/xwayland/Xwayland"
 
 exit 0

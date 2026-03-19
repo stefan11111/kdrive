@@ -1,4 +1,4 @@
-project('xserver', 'c',
+project('xwayland', 'c',
         default_options: [
             'buildtype=debugoptimized',
             'c_std=gnu99',
@@ -69,7 +69,6 @@ xproto_req = '>= 7.0.31'
 wayland_req = '>= 1.21.0'
 wayland_protocols_req = '>= 1.38'
 gbm_req = '>= 10.2'
-xf86dgaproto_req = '>= 2.0.99.1'
 xshmfence_req = '>= 1.1'
 
 x11_dep = dependency('x11')
@@ -92,13 +91,10 @@ compositeproto_dep = dependency('compositeproto', version: '>= 0.4', fallback: [
 recordproto_dep = dependency('recordproto', version: '>= 1.13.99.1', fallback: ['xorgproto', 'ext_xorgproto'])
 scrnsaverproto_dep = dependency('scrnsaverproto', version: '>= 1.1', fallback: ['xorgproto', 'ext_xorgproto'])
 resourceproto_dep = dependency('resourceproto', version: '>= 1.2.0', fallback: ['xorgproto', 'ext_xorgproto'])
-xf86driproto_dep = dependency('xf86driproto', version: '>= 2.1.0', fallback: ['xorgproto', 'ext_xorgproto'], required: get_option('dri1') == 'true')
-dri2proto_dep = dependency('dri2proto', version: '>= 2.8', fallback: ['xorgproto', 'ext_xorgproto'], required: get_option('dri2') == 'true')
 dri3proto_dep = dependency('dri3proto', version: '>= 1.4', fallback: ['xorgproto', 'ext_xorgproto'], required: get_option('dri3') == 'true')
 xineramaproto_dep = dependency('xineramaproto', fallback: ['xorgproto', 'ext_xorgproto'])
 xf86bigfontproto_dep = dependency('xf86bigfontproto', version: '>= 1.2.0', fallback: ['xorgproto', 'ext_xorgproto'], required: get_option('xf86bigfont'))
 xf86vidmodeproto_dep = dependency('xf86vidmodeproto', version: '>= 2.2.99.1', fallback: ['xorgproto', 'ext_xorgproto'])
-applewmproto_dep = dependency('applewmproto', version: '>= 1.4', fallback: ['xorgproto', 'ext_xorgproto'], required: false)
 xshmfence_dep = dependency('xshmfence', version: xshmfence_req, required: false)
 xwaylandproto_dep = dependency('xwaylandproto', version: '>= 1.0', fallback: ['xorgproto', 'ext_xorgproto'], required: false)
 dpmsproto_dep = dependency('dpmsproto', version: '>= 1.2', required: get_option('dpms'))
@@ -108,9 +104,6 @@ libbsd_dep = dependency('libbsd-overlay', required: false)
 xkbcomp_dep = dependency('xkbcomp', required: false)
 xkbfile_dep = dependency('xkbfile')
 xfont2_dep = dependency('xfont2', version: '>= 2.0')
-
-dbus_required = get_option('systemd_logind') == 'true'
-dbus_dep = dependency('dbus-1', version: '>= 1.0', required: dbus_required)
 
 build_systemd = get_option('systemd_notify') == 'true'
 # libsystemd-daemon was moved into libsystemd in version 209
@@ -177,131 +170,41 @@ else
     default_font_path = dfp
 endif
 
-glamor_option = get_option('glamor')
-
-hal_option = get_option('hal')
-if ['windows', 'darwin', 'cygwin'].contains(host_machine.system())
-    hal_option = 'false'
-endif
-
-build_udev = get_option('udev')
-build_udev_kms = get_option('udev_kms')
-if ['windows', 'darwin', 'cygwin', 'freebsd', 'netbsd', 'openbsd', 'sunos'].contains(host_machine.system())
-    build_udev = false
-    build_udev_kms = false
-endif
-
-if get_option('systemd_logind') == 'auto'
-    build_systemd_logind = build_udev_kms and dbus_dep.found()
-else
-    build_systemd_logind = get_option('systemd_logind') == 'true'
-endif
+build_glamor = get_option('glamor')
 
 with_dtrace = get_option('dtrace')
 if with_dtrace
     dtrace = find_program('dtrace', required: true)
 endif
 
-build_xorg = false
-if (host_machine.system() != 'windows')
-    if get_option('xorg') == 'auto'
-        build_xorg = (host_machine.system() != 'darwin' and
-                      host_machine.system() != 'windows')
-    else
-        build_xorg = get_option('xorg') == 'true'
-    endif
-endif
-xorgsdkdir = join_paths(get_option('prefix'), get_option('includedir'), 'xorg')
-libxcvt_dep = dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: build_xorg)
+libxcvt_dep = dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: true)
+build_xwayland = true
 
-build_xwayland = false
-if (host_machine.system() != 'darwin' and
-    host_machine.system() != 'windows' and
-    get_option('xwayland') != 'false')
-    xwayland_required = get_option('xwayland') == 'true'
-    build_glamor = glamor_option == 'true' or glamor_option == 'auto'
-
-    xwayland_path = get_option('xwayland-path')
-    if (xwayland_path == '')
-        xwayland_path = join_paths(get_option('prefix'), get_option('bindir'))
-    endif
-
-    xwayland_dep = [
-        dependency('wayland-client', version: wayland_req, required: xwayland_required),
-        dependency('wayland-protocols', version: wayland_protocols_req, required: xwayland_required),
-        dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: xwayland_required),
-    ]
-    if build_glamor
-        xwayland_dep += dependency('xshmfence', version: xshmfence_req, required: xwayland_required)
-        xwayland_dep += dependency('libdrm', version: libdrm_req, required: xwayland_required)
-        xwayland_dep += dependency('epoxy', required: xwayland_required)
-    endif
-
-    build_xwayland = true
-    # check for all the deps being found, to handle 'auto' mode.
-    foreach d: xwayland_dep
-        if not d.found()
-            build_xwayland = false
-        endif
-    endforeach
+xwayland_path = get_option('xwayland-path')
+if (xwayland_path == '')
+    xwayland_path = join_paths(get_option('prefix'), get_option('bindir'))
 endif
 
-## configure Xnest - nesting X server
-build_xnest = get_option('xnest') != 'false'
-xnest_required = get_option('xnest') == 'true'
-xnest_dep = [
-    dependency('xext', version: xext_req, required: xnest_required),
-    dependency('x11', required: xnest_required),
-    dependency('xau', required: xnest_required),
+xwayland_dep = [
+    dependency('wayland-client', version: wayland_req, required: true),
+    dependency('wayland-protocols', version: wayland_protocols_req, required: true),
+    dependency('libxcvt', fallback: ['libxcvt', 'libxcvt_dep'], required: true),
 ]
-if get_option('xnest') == 'auto'
-    # check for all the deps being found, to handle 'auto' mode.
-    foreach d: xnest_dep
-        if not d.found()
-            build_xnest = false
-        endif
-    endforeach
+if build_glamor
+    xwayland_dep += dependency('xshmfence', version: xshmfence_req, required: true)
+    xwayland_dep += dependency('libdrm', version: libdrm_req, required: true)
+    xwayland_dep += dependency('epoxy', required: true)
 endif
 
-build_xwin = false
-if get_option('xwin') == 'auto'
-    if (host_machine.system() == 'cygwin' or
-        host_machine.system() == 'windows')
-            build_xwin = true
+build_xwayland = true
+# check for all the deps being found, to handle 'auto' mode.
+foreach d: xwayland_dep
+    if not d.found()
+        build_xwayland = false
     endif
-else
-    build_xwin = get_option('xwin') == 'true'
-endif
+endforeach
 
-build_xquartz = false
-if get_option('xquartz') == 'auto'
-    if host_machine.system() == 'darwin'
-            build_xquartz = true
-    endif
-else
-    build_xquartz = get_option('xquartz') == 'true'
-endif
-
-build_rootless = false
-if build_xquartz
-    build_rootless = true
-endif
-
-build_xephyr = get_option('xephyr')
 build_xvfb = get_option('xvfb')
-
-summary({
-        'Xorg': build_xorg,
-        'Xwayland': build_xwayland,
-        'Xephyr': build_xephyr,
-        'Xnest': build_xnest,
-        'Xvfb': build_xvfb,
-        'Xwin': build_xwin,
-        'Xquartz': build_xquartz,
-    },
-    section: 'DDX',
-    bool_yn: true,
-)
 
 # IPv6 support
 have_AF_INET6 = cc.compiles('''
@@ -321,56 +224,6 @@ if build_ipv6 and not have_AF_INET6
 endif
 message('IPv6 support: ' + (build_ipv6 ? 'YES' : 'NO'))
 
-int10 = get_option('int10')
-if int10 == 'auto'
-    int10 = 'x86emu'
-    if host_machine.cpu() == 'ppc' and host_machine.system() == 'freebsd'
-        int10 = 'stub'
-    endif
-    if host_machine.cpu() == 'arm'
-        int10 = 'stub'
-    endif
-endif
-
-hal_dep = []
-if hal_option == 'auto'
-    if not build_udev
-        hal_dep = dependency('hal', required: false)
-        build_hal = hal_dep.found()
-    else
-        build_hal = false
-    endif
-else
-    build_hal = hal_option == 'true'
-    if build_hal
-        hal_dep = dependency('hal')
-    endif
-endif
-
-if build_udev and build_hal
-    error('Hotplugging through both libudev and hal not allowed')
-endif
-
-build_dbus = build_hal or build_systemd_logind
-
-udev_dep = dependency('', required:false)
-if build_udev or build_udev_kms
-    udev_dep = dependency('libudev', version: '>= 143')
-endif
-
-log_dir = get_option('log_dir')
-if log_dir == ''
-    log_dir = join_paths(get_option('prefix'), get_option('localstatedir'), 'log')
-endif
-
-module_dir = join_paths(get_option('libdir'), get_option('module_dir'))
-
-if glamor_option == 'auto'
-    build_glamor = build_xorg or build_xwayland
-else
-    build_glamor = glamor_option == 'true'
-endif
-
 gbm_dep = dependency('', required: false)
 epoxy_dep = dependency('', required: false)
 if build_glamor
@@ -378,31 +231,22 @@ if build_glamor
     epoxy_dep = dependency('epoxy', required: false)
 endif
 
-if build_xwayland
-    libdecor_dep = dependency('libdecor-0', required: false)
-    libdecor_option = get_option('libdecor')
-    if libdecor_option == 'auto'
-        have_libdecor = libdecor_dep.found()
-    else
-        have_libdecor = libdecor_option == 'true'
-        if have_libdecor and not libdecor_dep.found()
-            error('libdecor support requested but not found')
-        endif
+libdecor_dep = dependency('libdecor-0', required: false)
+libdecor_option = get_option('libdecor')
+if libdecor_option == 'auto'
+    have_libdecor = libdecor_dep.found()
+else
+    have_libdecor = libdecor_option == 'true'
+    if have_libdecor and not libdecor_dep.found()
+        error('libdecor support requested but not found')
     endif
-else
-    have_libdecor = false
 endif
 
-if build_xwayland
-    libei_dep = dependency('libei-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') in ['portal', 'socket'])
-    liboeffis_dep = dependency('liboeffis-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') == 'portal')
+libei_dep = dependency('libei-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') in ['portal', 'socket'])
+liboeffis_dep = dependency('liboeffis-1.0', version: '>= 1.0.0', required: get_option('xwayland_ei') == 'portal')
 
-    build_ei = libei_dep.found() and get_option('xwayland_ei') != 'false'
-    build_ei_portal = liboeffis_dep.found() and get_option('xwayland_ei') in ['portal', 'auto']
-else
-    build_ei = false
-    build_ei_portal = false
-endif
+build_ei = libei_dep.found() and get_option('xwayland_ei') != 'false'
+build_ei_portal = liboeffis_dep.found() and get_option('xwayland_ei') in ['portal', 'auto']
 
 # Lots of sha1 options, because Linux is about choice :)
 
@@ -512,18 +356,6 @@ endif
 
 libdrm_dep = dependency('libdrm', version: libdrm_req, required: false)
 
-if get_option('dri1') == 'auto'
-    build_dri1 = xf86driproto_dep.found() and libdrm_dep.found()
-else
-    build_dri1 = get_option('dri1') == 'true'
-endif
-
-if get_option('dri2') == 'auto'
-    build_dri2 = dri2proto_dep.found() and libdrm_dep.found()
-else
-    build_dri2 = get_option('dri2') == 'true'
-endif
-
 if host_machine.system() in ['freebsd', 'openbsd']
    epoll_dep = dependency('epoll-shim')
 else
@@ -545,28 +377,12 @@ else
     endif
 endif
 
-libdrm_required = (build_dri1 or build_dri2 or build_dri3) and get_option('drm') == true
+libdrm_required = build_dri3
 if not libdrm_dep.found() and libdrm_required
     error('DRI requested, but LIBDRM not found')
 endif
 
-build_modesetting = libdrm_dep.found() and dri2proto_dep.found()
-
-build_vgahw = false
-if get_option('vgahw') == 'auto'
-    if (host_machine.system() != 'darwin' and
-        host_machine.system() != 'windows' and
-        host_machine.system() != 'cygwin')
-        build_vgahw = true
-    endif
-else
-    build_vgahw = get_option('vgahw') == 'true'
-endif
-
 build_dpms = get_option('dpms')
-if build_xquartz
-    build_dpms = false
-endif
 
 build_xf86bigfont = get_option('xf86bigfont')
 build_screensaver = get_option('screensaver')
@@ -586,40 +402,6 @@ if build_xsecurity
 endif
 
 build_xv = get_option('xv')
-build_xvmc = get_option('xvmc')
-if not build_xv
-    build_xvmc = false
-endif
-
-build_dga = false
-xf86dgaproto_dep = dependency('', required: false)
-if get_option('dga') == 'auto'
-    xf86dgaproto_dep = dependency('xf86dgaproto', version: xf86dgaproto_req, required: false)
-    if xf86dgaproto_dep.found()
-        build_dga = true
-    endif
-elif get_option('dga') == 'true'
-    xf86dgaproto_dep = dependency('xf86dgaproto', version: xf86dgaproto_req, required: true)
-    build_dga = true
-endif
-
-build_apm = false
-if (get_option('linux_apm') == true and
-   host_machine.system() == 'linux')
-    if cc.has_header('linux/apm_bios.h')
-        build_apm = true
-    endif
-endif
-
-build_acpi = false
-if (get_option('linux_acpi') == true and
-   host_machine.system() == 'linux')
-    if (host_machine.cpu() == 'x86' or
-       host_machine.cpu() == 'x86_64' or
-       host_machine.cpu() == 'ia64')
-        build_acpi = true
-    endif
-endif
 
 build_mitshm = false
 if get_option('mitshm') == 'auto'
@@ -652,14 +434,10 @@ common_dep = [
     recordproto_dep,
     scrnsaverproto_dep,
     resourceproto_dep,
-    xf86driproto_dep,
-    dri2proto_dep,
     dri3proto_dep,
     xineramaproto_dep,
     xf86bigfontproto_dep,
-    xf86dgaproto_dep,
     xf86vidmodeproto_dep,
-    applewmproto_dep,
     dpmsproto_dep,
 
     pixman_dep,
@@ -675,12 +453,10 @@ inc = include_directories(
     'Xi',
     'composite',
     'damageext',
-    'exa',
     'fb',
     'glamor',
     'mi',
     'miext/damage',
-    'miext/shadow',
     'miext/sync',
     'dbe',
     'dri3',
@@ -778,7 +554,6 @@ endif
 subdir('include')
 
 # X server core
-subdir('config')
 subdir('dix')
 subdir('dri3')
 subdir('glx')
@@ -790,15 +565,8 @@ subdir('composite')
 subdir('damageext')
 subdir('dbe')
 subdir('miext/damage')
-subdir('miext/shadow')
 subdir('miext/sync')
-if build_rootless
-    subdir('miext/rootless')
-endif
 subdir('present')
-if build_xwin or build_xquartz
-    subdir('pseudoramiX')
-endif
 subdir('randr')
 subdir('record')
 subdir('render')
@@ -809,9 +577,6 @@ subdir('Xi')
 # other
 if build_glamor
     subdir('glamor')
-endif
-if build_xorg or get_option('xephyr')
-    subdir('exa')
 endif
 subdir('doc')
 
@@ -843,88 +608,4 @@ subdir('hw')
 
 if host_machine.system() != 'windows'
     subdir('test')
-endif
-
-if build_xorg
-    sdkconfig = configuration_data()
-    awk = find_program('awk')
-
-    sdkconfig.set('prefix', get_option('prefix'))
-    sdkconfig.set('exec_prefix', '${prefix}')
-    sdkconfig.set('libdir', join_paths('${exec_prefix}', get_option('libdir')))
-    sdkconfig.set('includedir', join_paths('${prefix}', get_option('includedir')))
-    sdkconfig.set('datarootdir', join_paths('${prefix}', get_option('datadir')))
-    sdkconfig.set('moduledir', join_paths('${exec_prefix}', module_dir))
-    sdkconfig.set('sdkdir', join_paths('${prefix}', get_option('includedir'), 'xorg'))
-    sdkconfig.set('sysconfigdir', join_paths('${datarootdir}', 'X11/xorg.conf.d'))
-
-    sdkconfig.set('abi_ansic',
-        run_command(awk, '-F', '[(,)]',
-                    '/^#define ABI_ANSIC.*SET/ { printf "%d.%d", $2, $3 }',
-                    files('hw/xfree86/common/xf86Module.h'),
-                    check: false
-        ).stdout()
-    )
-    sdkconfig.set('abi_videodrv',
-        run_command(awk, '-F', '[(,)]',
-                    '/^#define ABI_VIDEODRV.*SET/ { printf "%d.%d", $2, $3 }',
-                    files('hw/xfree86/common/xf86Module.h'),
-                    check: false
-        ).stdout()
-    )
-    sdkconfig.set('abi_xinput',
-        run_command(awk, '-F', '[(,)]',
-                    '/^#define ABI_XINPUT.*SET/ { printf "%d.%d", $2, $3 }',
-                    files('hw/xfree86/common/xf86Module.h'),
-                    check: false
-        ).stdout()
-    )
-    sdkconfig.set('abi_extension',
-        run_command(awk, '-F', '[(,)]',
-                    '/^#define ABI_EXTENSION.*SET/ { printf "%d.%d", $2, $3 }',
-                    files('hw/xfree86/common/xf86Module.h'),
-                    check: false
-        ).stdout()
-    )
-
-    sdk_required_modules = [
-      'pixman-1 >= 0.27.2',
-      f'xproto @xproto_req@',
-    ]
-
-    # XXX this isn't trying very hard, but hard enough.
-    sdkconfig.set('PACKAGE_VERSION', meson.project_version())
-    sdkconfig.set('SDK_REQUIRED_MODULES', ' '.join(sdk_required_modules))
-    sdkconfig.set('symbol_visibility', '-fvisibility=hidden')
-    sdkconfig.set('XORG_DRIVER_LIBS', '')
-
-    # On Windows, modules built with the SDK will need to link with server and
-    # module implibs to resolve symbols
-    if (host_machine.system() == 'cygwin' or
-        host_machine.system() == 'windows')
-        sdkconfig.set('XORG_DRIVER_LIBS', '-lXorg.exe -L\${moduledir} -lshadow -no-undefined')
-    endif
-
-    configure_file(
-        input: 'xorg-server.pc.in',
-        output: 'xorg-server.pc',
-        configuration: sdkconfig,
-        install_dir: join_paths(get_option('prefix'),
-                                get_option('libdir'),
-                                'pkgconfig'),
-    )
-
-    install_data('xorg-server.m4',
-                 install_dir: join_paths(get_option('datadir'), 'aclocal'))
-endif
-
-if build_docs or build_docs_devel
-    docxmlconfig = configuration_data()
-    docxmlconfig.set('PACKAGE_VERSION', meson.project_version())
-    docxmlconfig.set('RELEASE_DATE', release_date)
-    configure_file(
-        input: 'xserver.ent.in',
-        output: 'xserver.ent',
-        configuration: docxmlconfig
-    )
 endif
