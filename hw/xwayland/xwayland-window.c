@@ -1066,6 +1066,36 @@ xdg_surface_handle_configure(void *data,
     if (xwl_screen->fullscreen)
         xwl_window_set_fullscreen(xwl_window);
 
+    if (xwl_window->pending_toplevel_state.pending_configure) {
+        int32_t width = xwl_window->pending_toplevel_state.width;
+        int32_t height = xwl_window->pending_toplevel_state.height;
+        Bool old_active = xwl_screen->active;
+
+        xwl_window->pending_toplevel_state.pending_configure = FALSE;
+
+        if (width != 0 || height != 0) {
+            if (!xwl_screen->fullscreen) {
+                double scale, new_width, new_height;
+
+                new_width = (double) (width * xwl_screen->global_surface_scale);
+                new_height = (double) (height * xwl_screen->global_surface_scale);
+
+                scale = xwl_window_get_fractional_scale_factor(xwl_window);
+                new_width *= scale;
+                new_height *= scale;
+
+                xwl_window_maybe_resize(xwl_window, new_width, new_height);
+            }
+
+            xwl_screen->active = xwl_window->pending_toplevel_state.activated;
+
+            if (old_active != xwl_screen->active) {
+                if (!xwl_screen->active)
+                    xwl_screen_lost_focus(xwl_screen);
+            }
+        }
+    }
+
     xdg_surface_ack_configure(xdg_surface, serial);
 
     if (xwl_window->awaiting_initial_configure_event) {
@@ -1220,39 +1250,19 @@ xdg_toplevel_handle_configure(void *data,
                               struct wl_array *states)
 {
     struct xwl_window *xwl_window = data;
-    struct xwl_screen *xwl_screen = xwl_window->xwl_screen;
     uint32_t *p;
-    Bool old_active = xwl_screen->active;
-    double scale, new_width, new_height;
 
-    /* Maintain our current size if no dimensions are requested */
-    if (width == 0 && height == 0)
-        return;
+    xwl_window->pending_toplevel_state.pending_configure = TRUE;
+    xwl_window->pending_toplevel_state.width = width;
+    xwl_window->pending_toplevel_state.height = height;
 
-    if (!xwl_screen->fullscreen) {
-        new_width = (double) (width * xwl_screen->global_surface_scale);
-        new_height = (double) (height * xwl_screen->global_surface_scale);
-
-        scale = xwl_window_get_fractional_scale_factor(xwl_window);
-        new_width *= scale;
-        new_height *= scale;
-
-        /* This will be committed by the xdg_surface.configure handler */
-        xwl_window_maybe_resize(xwl_window, new_width, new_height);
-    }
-
-    xwl_screen->active = FALSE;
+    xwl_window->pending_toplevel_state.activated = FALSE;
     wl_array_for_each (p, states) {
         uint32_t state = *p;
         if (state == XDG_TOPLEVEL_STATE_ACTIVATED) {
-            xwl_screen->active = TRUE;
+            xwl_window->pending_toplevel_state.activated = TRUE;
             break;
         }
-    }
-
-    if (old_active != xwl_screen->active) {
-        if (!xwl_screen->active)
-            xwl_screen_lost_focus(xwl_screen);
     }
 }
 
