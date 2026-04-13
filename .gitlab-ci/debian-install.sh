@@ -32,6 +32,7 @@ apt-get install -y \
 	libdbus-1-dev \
 	libdecor-0-dev \
 	libdrm-dev \
+	libei-dev \
 	libegl1-mesa-dev \
 	libepoxy-dev \
 	libevdev2 \
@@ -45,7 +46,7 @@ apt-get install -y \
 	libinput10 \
 	libinput-dev \
 	libnvidia-egl-wayland-dev \
-	libpango1.0-0 \
+	libpango-1.0-0 \
 	libpango1.0-dev \
 	libpciaccess-dev \
 	libpixman-1-dev \
@@ -55,6 +56,7 @@ apt-get install -y \
 	libtool \
 	libudev-dev \
 	libunwind-dev \
+	libwayland-bin \
 	libwayland-dev \
 	libx11-dev \
 	libx11-xcb-dev \
@@ -116,7 +118,9 @@ apt-get install -y \
 	python3-numpy \
 	python3-six \
 	valgrind \
+	wayland-protocols \
 	weston \
+	x11proto-dev \
 	x11-xkb-utils \
 	xfonts-utils \
 	xkb-data \
@@ -127,26 +131,8 @@ apt-get install -y \
 
 cd /root
 
-# Xwayland requires drm 2.4.116 for drmSyncobjEventfd
-# but Debian bookworm has only 2.4.114
-git clone https://gitlab.freedesktop.org/mesa/drm --depth 1 --branch=libdrm-2.4.116
-cd drm
-meson _build
-ninja -C _build -j${FDO_CI_CONCURRENT:-4} install
-cd ..
-rm -rf drm
-
-# xserver requires xorgproto >= 2024.1 for XWAYLAND
-# but Debian bookworm has only 2022.1
-git clone https://gitlab.freedesktop.org/xorg/proto/xorgproto.git --depth 1 --branch=xorgproto-2024.1
-pushd xorgproto
-./autogen.sh
-make -j${FDO_CI_CONCURRENT:-4} install
-popd
-rm -rf xorgproto
-
 # xserver requires xtrans >= 1.5.1 to build with gcc 12
-# but Debian bookworm has only 1.4.0
+# but Debian trixie has only 1.4.0
 git clone https://gitlab.freedesktop.org/xorg/lib/libxtrans.git --depth 1 --branch=xtrans-1.6.0
 pushd libxtrans
 ./autogen.sh
@@ -154,30 +140,6 @@ make -j${FDO_CI_CONCURRENT:-4} install
 popd
 rm -rf libxtrans
 
-# wayland-protocols 1.38 requires either wayland-scanner 1.23 or a build with
-# dtd_validation=false, but Debian bookworm has only 1.21 w/ dtd_validation=true
-git clone https://gitlab.freedesktop.org/wayland/wayland.git --depth 1 --branch=1.21.0
-cd wayland
-meson -Dtests=false -Ddocumentation=false -Ddtd_validation=false _build
-ninja -C _build -j${FDO_CI_CONCURRENT:-4} install
-cd ..
-rm -rf wayland
-
-# Xwayland requires wayland-protocols >= 1.38, but Debian bookworm has 1.31 only
-git clone https://gitlab.freedesktop.org/wayland/wayland-protocols.git --depth 1 --branch=1.38
-cd wayland-protocols
-meson _build
-ninja -C _build -j${FDO_CI_CONCURRENT:-4} install
-cd ..
-rm -rf wayland-protocols
-
-# Install libei for Xwayland, as Debian didn't add until trixie
-git clone https://gitlab.freedesktop.org/libinput/libei.git --depth 1 --branch=1.0.0
-cd libei
-meson setup _build -Dtests=disabled -Ddocumentation=[] -Dliboeffis=enabled
-ninja -C _build -j${FDO_CI_CONCURRENT:-4} install
-cd ..
-rm -rf libei
 
 git clone https://gitlab.freedesktop.org/mesa/piglit.git
 cd piglit
@@ -186,7 +148,7 @@ cd ..
 
 git clone https://gitlab.freedesktop.org/xorg/test/xts
 cd xts
-git checkout 12a887c2c72c4258962b56ced7b0aec782f1ffed
+git checkout aae51229af810efba24412511f60602fab53eded
 ./autogen.sh
 xvfb-run make -j${FDO_CI_CONCURRENT:-4}
 cd ..
