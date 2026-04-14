@@ -133,6 +133,7 @@ xf86InfoRec xf86Info = {
     .autoAddGPU = FALSE,
 #endif
     .autoBindGPU = TRUE,
+    .noDbus = FALSE,
 };
 
 const char *xf86ConfigFile = NULL;
@@ -199,3 +200,4 @@ Bool xf86VidModeDisabled = FALSE;
 Bool xf86VidModeAllowNonLocal = FALSE;
 #endif
 Bool xorgHWAccess = FALSE;
+Bool xf86DbusDisabled = FALSE;

@@ -650,6 +650,7 @@ typedef enum {
     FLAG_IGLX,
     FLAG_DEBUG,
     FLAG_ALLOW_BYTE_SWAPPED_CLIENTS,
+    FLAG_NODBUS,
 } FlagValues;
 
 /**
@@ -710,6 +711,8 @@ static OptionInfoRec FlagOptions[] = {
     {FLAG_DEBUG, "Debug", OPTV_STRING,
      {0}, FALSE},
     {FLAG_ALLOW_BYTE_SWAPPED_CLIENTS, "AllowByteSwappedClients", OPTV_BOOLEAN,
+     {0}, FALSE},
+    {FLAG_NODBUS, "NoDbus", OPTV_BOOLEAN,
      {0}, FALSE},
     {-1, NULL, OPTV_NONE,
      {0}, FALSE},
@@ -819,6 +822,9 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
 
     if (xf86GetOptValBool(FlagOptions, FLAG_ALLOWMOUSEOPENFAIL, &value))
         xf86Info.allowMouseOpenFail = value;
+
+    if (xf86GetOptValBool(FlagOptions, FLAG_NODBUS, &value))
+        xf86Info.noDbus = value;
 
     xf86Info.pmFlag = TRUE;
     if (xf86GetOptValBool(FlagOptions, FLAG_NOPM, &value))
@@ -2472,6 +2478,9 @@ xf86HandleConfigFile(Bool autoconfig)
 
     if (xf86AllowMouseOpenFail)
         xf86Info.allowMouseOpenFail = TRUE;
+
+    if (xf86DbusDisabled)
+        xf86Info.noDbus = TRUE;
 
     return CONFIG_OK;
 }
