@@ -21,7 +21,7 @@ variables:
     REPO_URL_XORGPROTO:   'https://gitlab.freedesktop.org/xorg/proto/xorgproto.git'
     XORG_DEBIAN_VERSION:  'bookworm-slim'
     XORG_DEBIAN_EXEC:     'env FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/debian-install.sh'
-    XORG_DEBIAN_TAG:      '2026-03-16-image-update'
+    XORG_DEBIAN_TAG:      '2026-04-28-pytest'
     XORG_FREEBSD_VERSION: '14.2'
     XORG_FREEBSD_EXEC:    ''
     XORG_FREEBSD_TAG:     '2025-02-18-vm-image'
@@ -210,6 +210,21 @@ xwayland-nolibdecor:
         BUILD_XVFB: false
         MESON_EXTRA_ARGS: -Dlibdecor=false ${MESON_DDX_BUILD_ARGS}
 
+meson-asan:
+    extends: .common-build-and-test
+    script:
+        - .gitlab-ci/meson-build.sh --run-test
+    variables:
+      MESON_EXTRA_ARGS: >
+        -Db_sanitize=address
+        -Db_lundef=false
+        -Dxwayland=false
+        -Dxorg=false
+        -Dxephyr=false
+        -Dxnest=false
+        -Dxvfb=true
+      MESON_TEST_ARGS: --suite pyxtest
+
 mingw-cross-build:
     extends: .common-build-and-test
     script:
@@ -340,6 +355,18 @@ check-whitespace:
   stage: test
   script:
     - .gitlab-ci/whitespace-check.py $(git ls-files hw/xwayland)
+
+ruff-format-pyxtest:
+  extends: .fdo.ci-fairy
+  stage: build-and-test
+  script:
+    - uvx ruff format --check --diff test/pyxtest
+
+ruff-check-pyxtest:
+  extends: .fdo.ci-fairy
+  stage: build-and-test
+  script:
+    - uvx ruff check test/pyxtest
 
 #
 # Workflow rules needed due to:

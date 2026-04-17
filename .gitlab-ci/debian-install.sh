@@ -112,6 +112,7 @@ apt-get install -y \
 	pkg-config \
 	python3-attr \
 	python3-jinja2 \
+	python3-pytest \
 	python3-mako \
 	python3-numpy \
 	python3-six \
