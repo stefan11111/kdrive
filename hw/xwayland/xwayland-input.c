@@ -1692,7 +1692,8 @@ add_device(struct xwl_seat *xwl_seat,
     dev->public.devicePrivate = xwl_seat;
     dev->type = SLAVE;
     dev->spriteInfo->spriteOwner = FALSE;
-    dev->ignoreXkbActionsBehaviors = TRUE;
+    if (!xwl_seat->xwl_screen->is_gamescope)
+        dev->ignoreXkbActionsBehaviors = TRUE;
 
     return dev;
 }
@@ -3664,7 +3665,8 @@ InitInput(int argc, char *argv[])
 
     mieqInit();
 
-    inputInfo.keyboard->ignoreXkbActionsBehaviors = TRUE;
+    if (!xwl_screen->is_gamescope)
+        inputInfo.keyboard->ignoreXkbActionsBehaviors = TRUE;
     xwl_screen->input_registry = wl_display_get_registry(xwl_screen->display);
     wl_registry_add_listener(xwl_screen->input_registry, &input_listener,
                              xwl_screen);

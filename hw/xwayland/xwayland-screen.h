@@ -54,6 +54,7 @@ struct xwl_screen {
     int wm_client_id;
     int expecting_event;
     enum RootClipMode root_clip_mode;
+    Bool is_gamescope;
 
     Bool active;
     int rootless;
