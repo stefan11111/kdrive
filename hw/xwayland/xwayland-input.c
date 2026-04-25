@@ -3286,14 +3286,23 @@ static WindowPtr
 xwl_xy_to_window(ScreenPtr screen, SpritePtr sprite, int x, int y)
 {
     struct xwl_screen *xwl_screen;
+    struct xwl_seat *seat;
     WindowPtr ret;
 
     xwl_screen = xwl_screen_get(screen);
 
-    screen->XYToWindow = xwl_screen->XYToWindow;
-    ret = screen->XYToWindow(screen, sprite, x, y);
-    xwl_screen->XYToWindow = screen->XYToWindow;
-    screen->XYToWindow = xwl_xy_to_window;
+    /* root window should be already there */
+    sprite->spriteTraceGood = 1;
+    ret = DeepestSpriteWin(sprite);
+
+    seat = xwl_screen_get_default_seat(xwl_screen);
+    if (seat && seat->focus_window) {
+        ret = seat->focus_window->toplevel;
+        sprite->spriteTrace[sprite->spriteTraceGood++] = ret;
+
+        /* Continue to look deeper to find a child window if any */
+        ret = miSpriteTrace(sprite, x, y);
+    }
 
     /* If the device controlling the sprite has left the Wayland surface but
      * the DIX still finds the pointer within the X11 window, it means that
@@ -3669,7 +3678,6 @@ InitInput(int argc, char *argv[])
     wl_registry_add_listener(xwl_screen->input_registry, &input_listener,
                              xwl_screen);
 
-    xwl_screen->XYToWindow = pScreen->XYToWindow;
     pScreen->XYToWindow = xwl_xy_to_window;
 
     xwl_screen_roundtrip(xwl_screen);
