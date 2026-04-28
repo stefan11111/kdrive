@@ -107,6 +107,12 @@ struct xwl_window {
     int fractional_scale_numerator;
     struct wp_linux_drm_syncobj_surface_v1 *surface_sync;
     Bool awaiting_initial_configure_event;
+    struct {
+        Bool pending_configure;
+        int32_t width;
+        int32_t height;
+        Bool activated;
+    } pending_toplevel_state;
 };
 
 struct xwl_window *xwl_window_get(WindowPtr window);
