@@ -6,8 +6,6 @@ patch = version_split[2].to_int()
 # convert to the old-style 1.x.y version scheme used up to 1.20.x for backwards compatibility
 release = 1 * 10000000 + major * 100000 + minor * 1000 + patch
 
-dri_dep = dependency('dri', required: build_glx)
-
 conf_data = configuration_data()
 conf_data.set('_DIX_CONFIG_H_', '1')
 
@@ -227,7 +225,10 @@ conf_data.set('DPMSExtension', build_dpms ? '1' : false)
 conf_data.set('DRI2', build_dri2 ? '1' : false)
 conf_data.set('DRI3', build_dri3 ? '1' : false)
 if build_glx
-    conf_data.set_quoted('DRI_DRIVER_PATH', dri_dep.get_variable(pkgconfig : 'dridriverdir'))
+    if build_glx_dri
+        conf_data.set_quoted('DRI_DRIVER_PATH', dri_dep.get_variable(pkgconfig : 'dridriverdir'))
+        conf_data.set('BUILD_GLX_DRI', 1)
+    endif
 endif
 conf_data.set('HAS_SHM', build_mitshm ? '1' : false)
 conf_data.set('MITSHM', build_mitshm ? '1' : false)
