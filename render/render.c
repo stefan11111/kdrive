@@ -1468,7 +1468,7 @@ ProcRenderCreateCursor(ClientPtr client)
     int nbytes_mono;
     CursorMetricRec cm;
     CursorPtr pCursor;
-    CARD32 twocolor[3];
+    CARD32 twocolor[3] = { 0 };
     int rc, ncolor;
 
     REQUEST_SIZE_MATCH(xRenderCreateCursorReq);
