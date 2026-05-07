@@ -739,6 +739,8 @@ CheckPhysLimits(DeviceIntPtr pDev, CursorPtr cursor, Bool generateEvents,
             new.pScreen = pScreen;
         else
             pScreen = new.pScreen;
+        if (!pScreen)
+            return;
         (*pScreen->CursorLimits) (pDev, pScreen, cursor, &pSprite->hotLimits,
                                   &pSprite->physLimits);
         pSprite->confined = confineToScreen;
