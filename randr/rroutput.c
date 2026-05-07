@@ -150,7 +150,8 @@ RROutputSetClones(RROutputPtr output, RROutputPtr * clones, int numClones)
     else
         newClones = NULL;
     free(output->clones);
-    memcpy(newClones, clones, numClones * sizeof(RROutputPtr));
+    if (numClones)
+        memcpy(newClones, clones, numClones * sizeof(RROutputPtr));
     output->clones = newClones;
     output->numClones = numClones;
     RROutputChanged(output, TRUE);
@@ -187,7 +188,8 @@ RROutputSetModes(RROutputPtr output,
             RRModeDestroy(output->modes[i]);
         free(output->modes);
     }
-    memcpy(newModes, modes, numModes * sizeof(RRModePtr));
+    if (numModes)
+        memcpy(newModes, modes, numModes * sizeof(RRModePtr));
     output->modes = newModes;
     output->numModes = numModes;
     output->numPreferred = numPreferred;
@@ -282,7 +284,8 @@ RROutputSetCrtcs(RROutputPtr output, RRCrtcPtr * crtcs, int numCrtcs)
     else
         newCrtcs = NULL;
     free(output->crtcs);
-    memcpy(newCrtcs, crtcs, numCrtcs * sizeof(RRCrtcPtr));
+    if (numCrtcs)
+        memcpy(newCrtcs, crtcs, numCrtcs * sizeof(RRCrtcPtr));
     output->crtcs = newCrtcs;
     output->numCrtcs = numCrtcs;
     RROutputChanged(output, TRUE);
@@ -569,7 +572,8 @@ ProcRRGetOutputInfo(ClientPtr client)
             name = NULL;
         }
     }
-    memcpy(name, output->name, output->nameLength);
+    if (output->nameLength)
+        memcpy(name, output->name, output->nameLength);
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
