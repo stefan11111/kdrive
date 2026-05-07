@@ -122,6 +122,7 @@ static void FreePointerBarrierClient(struct PointerBarrierClient *c)
     struct PointerBarrierDevice *pbd = NULL, *tmp = NULL;
 
     xorg_list_for_each_entry_safe(pbd, tmp, &c->per_device, entry) {
+        xorg_list_del(&pbd->entry);
         free(pbd);
     }
     free(c);
