@@ -296,6 +296,11 @@ dixChangeWindowProperty(ClientPtr pClient, WindowPtr pWin, Atom property,
             pClient->errorValue = property;
             return rc;
         }
+        if (!pWin->optional) {
+            free(data);
+            dixFreeObjectWithPrivates(pProp, PRIVATE_PROPERTY);
+            return BadAlloc;
+        }
         pProp->next = pWin->optional->userProps;
         pWin->optional->userProps = pProp;
     }
