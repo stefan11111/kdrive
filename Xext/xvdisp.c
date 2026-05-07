@@ -1745,7 +1745,7 @@ XineramifyXv(void)
 
         /* now create a resource for each port */
         for (j = 0; j < refAdapt->nPorts; j++) {
-            PanoramiXRes *port = malloc(sizeof(PanoramiXRes));
+            PanoramiXRes *port = calloc(1, sizeof(PanoramiXRes));
 
             if (!port)
                 break;
