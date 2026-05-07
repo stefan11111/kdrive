@@ -777,6 +777,7 @@ eventToRawEvent(RawDeviceEvent *ev, xEvent **xi)
     int i, len = sizeof(xXIRawEvent);
     char *ptr;
     FP3232 *axisval, *axisval_raw;
+    int idx = 0;
 
     nvals = count_bits(ev->valuators.mask, sizeof(ev->valuators.mask));
     len += nvals * sizeof(FP3232) * 2;  /* 8 byte per valuator, once
@@ -805,10 +806,11 @@ eventToRawEvent(RawDeviceEvent *ev, xEvent **xi)
     for (i = 0; i < MAX_VALUATORS; i++) {
         if (BitIsOn(ev->valuators.mask, i)) {
             SetBit(ptr, i);
-            *axisval = double_to_fp3232(ev->valuators.data[i]);
-            *axisval_raw = double_to_fp3232(ev->valuators.data_raw[i]);
-            axisval++;
-            axisval_raw++;
+            if (idx < nvals) {
+                axisval[idx] = double_to_fp3232(ev->valuators.data[i]);
+                axisval_raw[idx] = double_to_fp3232(ev->valuators.data_raw[i]);
+                idx++;
+            }
         }
     }
 
