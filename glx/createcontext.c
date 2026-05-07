@@ -170,6 +170,9 @@ __glXDisp_CreateContextAttribsARB(__GLXclientState * cl, GLbyte * pc)
         }
     }
 
+    if (req->numAttribs && !attribs)
+        return BadAlloc;
+
     for (i = 0; i < req->numAttribs; i++) {
         switch (attribs[i * 2]) {
         case GLX_CONTEXT_MAJOR_VERSION_ARB:
