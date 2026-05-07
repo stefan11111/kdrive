@@ -2672,22 +2672,24 @@ SelectForWindow(DeviceIntPtr dev, WindowPtr pWin, ClientPtr client,
     int i, ret;
     Mask check;
     InputClientsPtr others;
+    OtherInputMasks *imasks;
 
     check = (mask & exclusivemasks);
-    if (wOtherInputMasks(pWin)) {
-        if (check & wOtherInputMasks(pWin)->inputEvents[mskidx]) {
+    imasks = wOtherInputMasks(pWin);
+    if (imasks) {
+        if (check & imasks->inputEvents[mskidx]) {
             /* It is illegal for two different clients to select on any of
              * the events for maskcheck. However, it is OK, for some client
              * to continue selecting on one of those events.
              */
-            for (others = wOtherInputMasks(pWin)->inputClients; others;
+            for (others = imasks->inputClients; others;
                  others = others->next) {
                 if (!SameClient(others, client) && (check &
                                                     others->mask[mskidx]))
                     return BadAccess;
             }
         }
-        for (others = wOtherInputMasks(pWin)->inputClients; others;
+        for (others = imasks->inputClients; others;
              others = others->next) {
             if (SameClient(others, client)) {
                 check = others->mask[mskidx];
