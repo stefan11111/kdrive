@@ -314,6 +314,9 @@ SELinuxPopulateItem(SELinuxListItemRec * i, PrivateRec ** privPtr, CARD32 id,
     SELinuxObjectRec *obj = dixLookupPrivate(privPtr, objectKey);
     SELinuxObjectRec *data = dixLookupPrivate(privPtr, dataKey);
 
+    if (!i)
+        return BadAlloc;
+
     if (avc_sid_to_context_raw(obj->sid, &i->octx) < 0)
         return BadValue;
     if (avc_sid_to_context_raw(data->sid, &i->dctx) < 0)
@@ -331,6 +334,9 @@ static void
 SELinuxFreeItems(SELinuxListItemRec * items, int count)
 {
     int k;
+
+    if (!items)
+        return;
 
     for (k = 0; k < count; k++) {
         freecon(items[k].octx);
