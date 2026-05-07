@@ -951,8 +951,9 @@ _XkbCopyClientMap(XkbDescPtr src, XkbDescPtr dst)
                 dst->map->syms = tmp;
 
             }
-            memcpy(dst->map->syms, src->map->syms,
-                   src->map->size_syms * sizeof(KeySym));
+            if (src->map->size_syms)
+                memcpy(dst->map->syms, src->map->syms,
+                       src->map->size_syms * sizeof(KeySym));
         }
         else {
             free(dst->map->syms);
