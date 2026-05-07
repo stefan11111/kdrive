@@ -487,8 +487,12 @@ DeepCopyKeyboardClasses(DeviceIntPtr from, DeviceIntPtr to)
             if (!k->xkb_sli)
                 continue;
             if (k->xkb_sli->flags & XkbSLI_IsDefault) {
-                k->xkb_sli->names = to->key->xkbInfo->desc->names->indicators;
-                k->xkb_sli->maps = to->key->xkbInfo->desc->indicators->maps;
+                if (to->key && to->key->xkbInfo && to->key->xkbInfo->desc &&
+                    to->key->xkbInfo->desc->names &&
+                    to->key->xkbInfo->desc->indicators) {
+                    k->xkb_sli->names = to->key->xkbInfo->desc->names->indicators;
+                    k->xkb_sli->maps = to->key->xkbInfo->desc->indicators->maps;
+                }
             }
         }
     }
