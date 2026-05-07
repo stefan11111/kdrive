@@ -117,7 +117,7 @@ glamor_set_color_depth(ScreenPtr      pScreen,
                        GLint          uniform)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(pScreen);
-    float       color[4];
+    float       color[4] = { 0 };
 
     glamor_get_rgba_from_pixel(pixel,
                                &color[0], &color[1], &color[2], &color[3],
