@@ -3514,6 +3514,9 @@ xwl_seat_create_pointer_warp_emulator(struct xwl_seat *xwl_seat)
     if (xwl_seat->confined_pointer)
         xwl_seat_destroy_confined_pointer(xwl_seat);
 
+    if (xwl_seat->pointer_warp_emulator)
+        xwl_seat_destroy_pointer_warp_emulator(xwl_seat);
+
     xwl_seat->pointer_warp_emulator =
         xwl_pointer_warp_emulator_create(xwl_seat);
 }
