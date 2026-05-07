@@ -192,7 +192,8 @@ RRCrtcNotify(RRCrtcPtr crtc,
     /*
      * Copy the new list of outputs into the crtc
      */
-    memcpy(crtc->outputs, outputs, numOutputs * sizeof(RROutputPtr));
+    if (numOutputs)
+        memcpy(crtc->outputs, outputs, numOutputs * sizeof(RROutputPtr));
     /*
      * Update remaining crtc fields
      */
@@ -761,7 +762,8 @@ RRCrtcSet(RRCrtcPtr crtc,
         crtc->y == y &&
         crtc->rotation == rotation &&
         crtc->numOutputs == numOutputs &&
-        !memcmp(crtc->outputs, outputs, numOutputs * sizeof(RROutputPtr)) &&
+        (!numOutputs ||
+         !memcmp(crtc->outputs, outputs, numOutputs * sizeof(RROutputPtr))) &&
         !RRCrtcPendingProperties(crtc) && !RRCrtcPendingTransform(crtc) &&
         !crtcChanged) {
         recompute = FALSE;
