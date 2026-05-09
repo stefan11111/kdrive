@@ -19,9 +19,9 @@ variables:
     FDO_UPSTREAM_REPO:    'xorg/xserver'
     MESON_BUILDDIR:       'build'
     REPO_URL_XORGPROTO:   'https://gitlab.freedesktop.org/xorg/proto/xorgproto.git'
-    XORG_DEBIAN_VERSION:  'bookworm-slim'
+    XORG_DEBIAN_VERSION:  'trixie-slim'
     XORG_DEBIAN_EXEC:     'env FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/debian-install.sh'
-    XORG_DEBIAN_TAG:      '2026-03-16-image-update'
+    XORG_DEBIAN_TAG:      '2026-03-21-update-to-trixie'
     XORG_FREEBSD_VERSION: '14.2'
     XORG_FREEBSD_EXEC:    ''
     XORG_FREEBSD_TAG:     '2025-02-18-vm-image'
@@ -114,7 +114,7 @@ stages:
     FDO_DISTRIBUTION_PACKAGES:  'git gcc pkgconf autoconf automake libtool xorg-macros xorgproto bash meson ninja pixman xtrans libXau libXdmcp libXfont2 libxkbfile libxcvt libpciaccess font-util libepoll-shim'
     FDO_IMAGE_SIZE:             '30G'
 
-debian-bookworm:
+debian-trixie:
   extends:
     - .fdo.container-build@debian
     - .ci-run-policy
