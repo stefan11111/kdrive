@@ -1144,12 +1144,55 @@ ShmBusfaultNotify(void *context)
 }
 
 static int
+ProcShmAttachFdCommon(ClientPtr client, off_t offset, size_t size, int fd)
+{
+    REQUEST(xShmAttachFdReq);
+
+    /* Parameters are validated already, so no need to check them */
+    ShmDescPtr shmdesc = malloc(sizeof(ShmDescRec));
+    if (!shmdesc) {
+        close(fd);
+        return BadAlloc;
+    }
+    shmdesc->is_fd = TRUE;
+    shmdesc->addr = mmap(NULL, size,
+                         stuff->readOnly ? PROT_READ : PROT_READ|PROT_WRITE,
+                         MAP_SHARED,
+                         fd, offset);
+
+    close(fd);
+    if (shmdesc->addr == ((char *) -1)) {
+        free(shmdesc);
+        return BadAccess;
+    }
+
+    shmdesc->refcnt = 1;
+    shmdesc->writable = !stuff->readOnly;
+    shmdesc->size = size;
+    shmdesc->resource = stuff->shmseg;
+
+    shmdesc->busfault = busfault_register_mmap(shmdesc->addr, shmdesc->size, ShmBusfaultNotify, shmdesc);
+    if (!shmdesc->busfault) {
+        munmap(shmdesc->addr, shmdesc->size);
+        free(shmdesc);
+        return BadAlloc;
+    }
+
+    shmdesc->next = Shmsegs;
+    Shmsegs = shmdesc;
+
+    if (!AddResource(stuff->shmseg, ShmSegType, (void *) shmdesc))
+        return BadAlloc;
+    return Success;
+}
+
+static int
 ProcShmAttachFd(ClientPtr client)
 {
     int fd;
-    ShmDescPtr shmdesc;
-    REQUEST(xShmAttachFdReq);
     struct stat statb;
+    size_t size;
+    REQUEST(xShmAttachFdReq);
 
     SetReqFds(client, 1);
     REQUEST_SIZE_MATCH(xShmAttachFdReq);
@@ -1167,41 +1210,74 @@ ProcShmAttachFd(ClientPtr client)
         return BadMatch;
     }
 
-    shmdesc = malloc(sizeof(ShmDescRec));
-    if (!shmdesc) {
+    size = (size_t)statb.st_size;
+    if ((off_t)size != statb.st_size) {
         close(fd);
-        return BadAlloc;
-    }
-    shmdesc->is_fd = TRUE;
-    shmdesc->addr = mmap(NULL, statb.st_size,
-                         stuff->readOnly ? PROT_READ : PROT_READ|PROT_WRITE,
-                         MAP_SHARED,
-                         fd, 0);
-
-    close(fd);
-    if (shmdesc->addr == ((char *) -1)) {
-        free(shmdesc);
-        return BadAccess;
+        return BadMatch;
     }
 
-    shmdesc->refcnt = 1;
-    shmdesc->writable = !stuff->readOnly;
-    shmdesc->size = statb.st_size;
-    shmdesc->resource = stuff->shmseg;
+    return ProcShmAttachFdCommon(client, 0, size, fd);
+}
 
-    shmdesc->busfault = busfault_register_mmap(shmdesc->addr, shmdesc->size, ShmBusfaultNotify, shmdesc);
-    if (!shmdesc->busfault) {
-        munmap(shmdesc->addr, shmdesc->size);
-        free(shmdesc);
-        return BadAlloc;
+#ifndef X_ShmAttachFdExt
+#define X_ShmAttachFdExt                8
+
+typedef struct {
+    CARD8	reqType;	/* always ShmReqCode */
+    CARD8	shmReqType;	/* always X_ShmAttachFdExt */
+    CARD16	length;
+    CARD32	shmseg;
+    BOOL	readOnly;
+    BYTE	pad0;
+    CARD16	pad1;
+    CARD32	size;		/* size of the buffer */
+    CARD64	offset;		/* offset to pass to mmap() */
+} xShmAttachFdExtReq;
+#endif
+
+static int
+ProcShmAttachFdExt(ClientPtr client)
+{
+    int fd;
+    size_t size;
+    off_t offset;
+    REQUEST(xShmAttachFdExtReq);
+
+    SetReqFds(client, 1);
+    REQUEST_SIZE_MATCH(xShmAttachFdExtReq);
+    LEGAL_NEW_RESOURCE(stuff->shmseg, client);
+    if ((stuff->readOnly != xTrue) && (stuff->readOnly != xFalse)) {
+        client->errorValue = stuff->readOnly;
+        return BadValue;
+    }
+    fd = ReadFdFromClient(client);
+    if (fd < 0)
+        return BadMatch;
+
+    if (stuff->pad0) {
+        client->errorValue = stuff->pad0;
+        return BadValue;
     }
 
-    shmdesc->next = Shmsegs;
-    Shmsegs = shmdesc;
+    if (stuff->pad1) {
+        client->errorValue = stuff->pad1;
+        return BadValue;
+    }
 
-    if (!AddResource(stuff->shmseg, ShmSegType, (void *) shmdesc))
-        return BadAlloc;
-    return Success;
+    size = (size_t)stuff->size;
+    offset = (off_t)stuff->offset;
+
+    if (size == 0 || (uint32_t)size != stuff->size) {
+        client->errorValue = stuff->size;
+        return BadValue;
+    }
+
+    if ((uint64_t)offset != stuff->offset) {
+        client->errorValue = stuff->offset;
+        return BadValue;
+    }
+
+    return ProcShmAttachFdCommon(client, offset, size, fd);
 }
 
 static int
@@ -1374,6 +1450,8 @@ ProcShmDispatch(ClientPtr client)
         return ProcShmAttachFd(client);
     case X_ShmCreateSegment:
         return ProcShmCreateSegment(client);
+    case X_ShmAttachFdExt:
+        return ProcShmAttachFdExt(client);
 #endif
     default:
         return BadRequest;
@@ -1481,6 +1559,19 @@ SProcShmCreateSegment(ClientPtr client)
     swapl(&stuff->size);
     return ProcShmCreateSegment(client);
 }
+
+static int _X_COLD
+SProcShmAttachFdExt(ClientPtr client)
+{
+    REQUEST(xShmAttachFdExtReq);
+    SetReqFds(client, 1);
+    swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xShmAttachFdExtReq);
+    swapl(&stuff->shmseg);
+    swapl(&stuff->size);
+    swapll(&stuff->offset);
+    return ProcShmAttachFd(client);
+}
 #endif  /* SHM_FD_PASSING */
 
 static int _X_COLD
@@ -1510,6 +1601,8 @@ SProcShmDispatch(ClientPtr client)
         return SProcShmAttachFd(client);
     case X_ShmCreateSegment:
         return SProcShmCreateSegment(client);
+    case X_ShmAttachFdExt:
+        return SProcShmAttachFdExt(client);
 #endif
     default:
         return BadRequest;
