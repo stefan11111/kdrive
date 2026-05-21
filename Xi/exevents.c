@@ -487,8 +487,12 @@ DeepCopyKeyboardClasses(DeviceIntPtr from, DeviceIntPtr to)
             if (!k->xkb_sli)
                 continue;
             if (k->xkb_sli->flags & XkbSLI_IsDefault) {
-                k->xkb_sli->names = to->key->xkbInfo->desc->names->indicators;
-                k->xkb_sli->maps = to->key->xkbInfo->desc->indicators->maps;
+                if (to->key && to->key->xkbInfo && to->key->xkbInfo->desc &&
+                    to->key->xkbInfo->desc->names &&
+                    to->key->xkbInfo->desc->indicators) {
+                    k->xkb_sli->names = to->key->xkbInfo->desc->names->indicators;
+                    k->xkb_sli->maps = to->key->xkbInfo->desc->indicators->maps;
+                }
             }
         }
     }
@@ -2668,22 +2672,24 @@ SelectForWindow(DeviceIntPtr dev, WindowPtr pWin, ClientPtr client,
     int i, ret;
     Mask check;
     InputClientsPtr others;
+    OtherInputMasks *imasks;
 
     check = (mask & exclusivemasks);
-    if (wOtherInputMasks(pWin)) {
-        if (check & wOtherInputMasks(pWin)->inputEvents[mskidx]) {
+    imasks = wOtherInputMasks(pWin);
+    if (imasks) {
+        if (check & imasks->inputEvents[mskidx]) {
             /* It is illegal for two different clients to select on any of
              * the events for maskcheck. However, it is OK, for some client
              * to continue selecting on one of those events.
              */
-            for (others = wOtherInputMasks(pWin)->inputClients; others;
+            for (others = imasks->inputClients; others;
                  others = others->next) {
                 if (!SameClient(others, client) && (check &
                                                     others->mask[mskidx]))
                     return BadAccess;
             }
         }
-        for (others = wOtherInputMasks(pWin)->inputClients; others;
+        for (others = imasks->inputClients; others;
              others = others->next) {
             if (SameClient(others, client)) {
                 check = others->mask[mskidx];

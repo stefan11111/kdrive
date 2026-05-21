@@ -3379,10 +3379,21 @@ static void
 xwl_pointer_warp_emulator_lock(struct xwl_pointer_warp_emulator *warp_emulator)
 {
     struct xwl_seat *xwl_seat = warp_emulator->xwl_seat;
-    struct xwl_screen *xwl_screen = xwl_seat->xwl_screen;
+    struct xwl_screen *xwl_screen;
     struct zwp_pointer_constraints_v1 *pointer_constraints =
-        xwl_screen->pointer_constraints;
+        NULL;
     struct xwl_window *lock_window = xwl_seat->focus_window;
+
+    if (!xwl_seat)
+        return;
+
+    xwl_screen = xwl_seat->xwl_screen;
+    if (!xwl_screen)
+        return;
+
+    pointer_constraints = xwl_screen->pointer_constraints;
+    if (!pointer_constraints || !lock_window || !lock_window->surface || !xwl_seat->wl_pointer)
+        return;
 
     warp_emulator->locked_window = lock_window;
 
@@ -3502,6 +3513,9 @@ xwl_seat_create_pointer_warp_emulator(struct xwl_seat *xwl_seat)
 {
     if (xwl_seat->confined_pointer)
         xwl_seat_destroy_confined_pointer(xwl_seat);
+
+    if (xwl_seat->pointer_warp_emulator)
+        xwl_seat_destroy_pointer_warp_emulator(xwl_seat);
 
     xwl_seat->pointer_warp_emulator =
         xwl_pointer_warp_emulator_create(xwl_seat);

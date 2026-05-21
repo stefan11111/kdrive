@@ -446,7 +446,8 @@ glamor_composite_glyphs(CARD8 op,
 
                     /* Glyph not cached in current atlas?
                      */
-                    if (_X_UNLIKELY(glyph_priv->serial != glyph_atlas->serial)) {
+                    if (_X_UNLIKELY(!glyph_atlas ||
+                                    glyph_priv->serial != glyph_atlas->serial)) {
                         if (!glamor_glyph_can_add(glyph_atlas, glyph_atlas_dim, glyph_draw)) {
                             if (glyphs_queued) {
                                 glamor_glyphs_flush(op, src, dst, prog, glyph_atlas, glyphs_queued);

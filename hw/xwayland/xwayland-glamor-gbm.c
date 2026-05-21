@@ -215,7 +215,8 @@ xwl_glamor_gbm_create_pixmap_for_bo(ScreenPtr screen, struct gbm_bo *bo,
         },
     };
 
-    for (plane = 0; plane < num_planes; plane++) fds[plane] = -1;
+    for (plane = 0; plane < GBM_MAX_PLANES; plane++)
+        fds[plane] = -1;
 #endif
 
     xwl_pixmap = calloc(1, sizeof(*xwl_pixmap));
@@ -242,11 +243,27 @@ xwl_glamor_gbm_create_pixmap_for_bo(ScreenPtr screen, struct gbm_bo *bo,
 
 #ifdef GBM_BO_FD_FOR_PLANE
     if (xwl_gbm->dmabuf_capable) {
+        int attrs_needed;
 #define ADD_ATTR(attrs, num, attr)                                      \
         do {                                                            \
-            assert(((num) + 1) < (sizeof(attrs) / sizeof((attrs)[0]))); \
+            if (((num) + 1) >= (int)(sizeof(attrs) / sizeof((attrs)[0]))) \
+                goto error;                                             \
             (attrs)[(num)++] = (attr);                                  \
         } while (0)
+
+        /* Need:  6                 for  WIDTH/HEIGHT/FOURCC pairs
+         *        + num_planes * 10 for 5 per-plane attr/value pairs
+         *        + 1               for EGL_NONE
+         */
+        attrs_needed = 6 + num_planes * 10 + 1;
+
+        if (num_planes <= 0 ||
+            num_planes > GBM_MAX_PLANES ||
+            num_planes > (int)(sizeof(planeAttrs) / sizeof(planeAttrs[0])) ||
+            attrs_needed > (int)(sizeof(img_attrs) / sizeof(img_attrs[0]))) {
+            goto error;
+        }
+
         ADD_ATTR(img_attrs, attr_num, EGL_WIDTH);
         ADD_ATTR(img_attrs, attr_num, gbm_bo_get_width(bo));
         ADD_ATTR(img_attrs, attr_num, EGL_HEIGHT);

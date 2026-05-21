@@ -481,6 +481,12 @@ miInitVisuals(VisualPtr * visualp, DepthPtr * depthp, int *nvisualp,
         d = visuals->depth;
         vtype = visuals->visuals;
         nvtype = visuals->count;
+        if (prefp >= preferredCVCs + ndepth) {
+            free(depth);
+            free(visual);
+            free(preferredCVCs);
+            return FALSE;
+        }
         *prefp = visuals->preferredCVC;
         prefp++;
         vid = NULL;

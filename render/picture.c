@@ -1010,6 +1010,8 @@ static int
 cpAlphaMap(void **result, XID id, ScreenPtr screen, ClientPtr client, Mask mode)
 {
 #ifdef PANORAMIX
+    if (!screen)
+        return BadValue;
     if (!noPanoramiXExtension) {
         PanoramiXRes *res;
         int err = dixLookupResourceByType((void **)&res, id, XRT_PICTURE,

@@ -127,6 +127,7 @@ static int
 XkmGetCountedString(FILE * file, char *str, int max_len)
 {
     int count, nRead = 0;
+    int nStored = 0;
 
     count = XkmGetCARD16(file, &nRead);
     if (count > 0) {
@@ -145,11 +146,12 @@ XkmGetCountedString(FILE * file, char *str, int max_len)
             tmp = fread(str, 1, count, file);
         }
         nRead += tmp;
+        nStored = tmp;
     }
     if (count >= max_len)
         str[max_len - 1] = '\0';
     else
-        str[count] = '\0';
+        str[nStored] = '\0';
     count = XkbPaddedSize(nRead) - nRead;
     if (count > 0)
         nRead += XkmSkipPadding(file, count);

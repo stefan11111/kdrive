@@ -951,8 +951,9 @@ _XkbCopyClientMap(XkbDescPtr src, XkbDescPtr dst)
                 dst->map->syms = tmp;
 
             }
-            memcpy(dst->map->syms, src->map->syms,
-                   src->map->size_syms * sizeof(KeySym));
+            if (src->map->size_syms)
+                memcpy(dst->map->syms, src->map->syms,
+                       src->map->size_syms * sizeof(KeySym));
         }
         else {
             free(dst->map->syms);
@@ -1209,8 +1210,9 @@ _XkbCopyServerMap(XkbDescPtr src, XkbDescPtr dst)
                     return FALSE;
                 dst->server->acts = tmp;
             }
-            memcpy(dst->server->acts, src->server->acts,
-                   src->server->size_acts * sizeof(XkbAction));
+            if (src->server->size_acts)
+                memcpy(dst->server->acts, src->server->acts,
+                       src->server->size_acts * sizeof(XkbAction));
         }
         else {
             free(dst->server->acts);
@@ -1596,7 +1598,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
                 if (sshape->num_outlines) {
                     tmp = calloc(sshape->num_outlines, sizeof(XkbOutlineRec));
                     if (!tmp)
-                        return FALSE;
+                        goto fail_shapes;
                     dshape->outlines = tmp;
 
                     for (j = 0,
@@ -1608,7 +1610,7 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
                             tmp = xallocarray(soutline->num_points,
                                               sizeof(XkbPointRec));
                             if (!tmp)
-                                return FALSE;
+                                goto fail_shapes;
                             doutline->points = tmp;
 
                             memcpy(doutline->points, soutline->points,
@@ -1919,6 +1921,24 @@ _XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
     }
 
     return TRUE;
+
+ fail_shapes:
+    /* Avoid leaking partially-copied shape data on allocation failure. */
+    for (k = 0, dshape = dst->geom->shapes; k <= i; k++, dshape++) {
+        if (!dshape->outlines)
+            continue;
+        for (j = 0, doutline = dshape->outlines;
+             j < dshape->num_outlines; j++, doutline++) {
+            free(doutline->points);
+            doutline->points = NULL;
+            doutline->sz_points = 0;
+        }
+        free(dshape->outlines);
+        dshape->outlines = NULL;
+        dshape->num_outlines = 0;
+        dshape->sz_outlines = 0;
+    }
+    return FALSE;
 }
 
 static Bool

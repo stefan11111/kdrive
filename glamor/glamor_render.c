@@ -1107,7 +1107,7 @@ glamor_composite_choose_shader(CARD8 op,
      * the dynamic code above doesn't apply), then fall back to
      * software.  We should use texture views to fix this properly.
      */
-    if (source_pixmap && source_pixmap == mask_pixmap &&
+    if (mask && source_pixmap && source_pixmap == mask_pixmap &&
         source->format != mask->format) {
         goto fail;
     }
