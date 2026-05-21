@@ -369,6 +369,50 @@ glamor_atlas_for_glyph(glamor_screen_private *glamor_priv, DrawablePtr drawable)
         return glamor_priv->glyph_atlas_a;
 }
 
+/* When drawing on memory drawables (1-bit pixmaps), use fbGlyphs as the drawing routine.
+   Eventually copy GPU pixels to a temporary CPU pixmap */
+static int
+glamor_composite_glyphs_cpu(CARD8 op,
+                        PicturePtr src,
+                        PicturePtr dst,
+                        PictFormatPtr glyph_format,
+                        INT16 x_src,
+                        INT16 y_src, int nlist, GlyphListPtr list,
+                        GlyphPtr *glyphs)
+{
+    PixmapPtr src_pixmap, save = NULL, tmp = NULL;
+    PixmapPtr dst_pixmap = glamor_get_drawable_pixmap(dst->pDrawable);
+    glamor_pixmap_private *dst_pixmap_priv = glamor_get_pixmap_private(dst_pixmap);
+
+    if ( dst_pixmap_priv->type != GLAMOR_MEMORY || dst_pixmap_priv->fbo != NULL)
+        return 0;
+
+    src_pixmap = glamor_get_drawable_pixmap(src->pDrawable);
+    if ( src_pixmap->devPrivate.ptr == NULL ) {
+         FbBits *dst_bits;
+         FbStride dst_stride;
+         int dst_bpp;
+         BoxRec box;
+
+         box.x1 = 0;
+         box.x2 = src_pixmap->drawable.width;
+         box.y1 = 0;
+         box.y2 = src_pixmap->drawable.height;
+         
+         save = (void*) src->pDrawable;
+         tmp = fbCreatePixmap(dst->pDrawable->pScreen, src_pixmap->drawable.width, src_pixmap->drawable.height, src_pixmap->drawable.depth, 0);
+         fbGetPixmapBitsData(tmp, dst_bits, dst_stride, dst_bpp);
+         glamor_download_boxes(src_pixmap, &box, 1, 0, 0, 0, 0, (uint8_t *) dst_bits, dst_stride * sizeof (FbBits));
+         src->pDrawable = (void*)tmp;
+    }
+    fbGlyphs(op, src, dst, glyph_format, x_src, y_src, nlist, list, glyphs);
+    if ( tmp != NULL ) {
+        fbDestroyPixmap(tmp);
+        src->pDrawable = (void*)save;
+    }
+    return 1;
+}
+
 void
 glamor_composite_glyphs(CARD8 op,
                         PicturePtr src,
@@ -392,11 +436,13 @@ glamor_composite_glyphs(CARD8 op,
     int glyph_max_dim = glamor_priv->glyph_max_dim;
     int nglyph = 0;
     int screen_num = screen->myNum;
+        
+    glamor_make_current(glamor_priv);
+    if ( glamor_composite_glyphs_cpu( op, src, dst, glyph_format, x_src, y_src, nlist, list, glyphs))
+        return;
 
     for (n = 0; n < nlist; n++)
         nglyph += list[n].len;
-
-    glamor_make_current(glamor_priv);
 
     glyphs_queued = 0;
 
