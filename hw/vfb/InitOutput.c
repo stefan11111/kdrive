@@ -807,15 +807,7 @@ vfbRROutputValidateMode(ScreenPtr           pScreen,
                         RROutputPtr         output,
                         RRModePtr           mode)
 {
-    rrScrPriv(pScreen);
-
-    if (pScrPriv->minWidth <= mode->mode.width &&
-        pScrPriv->maxWidth >= mode->mode.width &&
-        pScrPriv->minHeight <= mode->mode.height &&
-        pScrPriv->maxHeight >= mode->mode.height)
-        return TRUE;
-    else
-        return FALSE;
+    return TRUE;
 }
 
 static Bool
@@ -827,18 +819,75 @@ vfbRRScreenSetSize(ScreenPtr  pScreen,
 {
     rrScrPrivPtr pScrPriv = rrGetScrPriv(pScreen);
 
+    /* Make a copy of the screen info, we will only replace
+     * vfbScreens[pScreen->myNum] if we succeed to change the size
+     */
+    vfbScreenInfo vfb = vfbScreens[pScreen->myNum];
+    PixmapPtr rootPixmap;
+    char *pbits;
+
+    /* If the framebuffer is enough to handle the new size we do not allocate
+     * a new framebuffer
+     */
+    if (width <= vfb.width && height <= vfb.height) {
+        // Prevent screen updates while we change things around
+        SetRootClip(pScreen, ROOT_CLIP_NONE);
+
+        pScreen->width = width;
+        pScreen->height = height;
+        pScreen->mmWidth = mmWidth;
+        pScreen->mmHeight = mmHeight;
+
+        // Restore the ability to update screen, now with new dimensions
+        SetRootClip(pScreen, ROOT_CLIP_FULL);
+
+        RRScreenSizeNotify(pScreen);
+        RRTellChanged(pScreen);
+
+        return TRUE;
+    }
+
+    vfb.pfbMemory = NULL;
+    vfb.width = width;
+    vfb.height = height;
+    vfb.paddedBytesWidth = PixmapBytePad(vfb.width, vfb.depth);
+    if (vfb.bitsPerPixel >= 8)
+        vfb.paddedWidth = vfb.paddedBytesWidth / (vfb.bitsPerPixel / 8);
+    else
+        vfb.paddedWidth = vfb.paddedBytesWidth * 8;
+    pbits = vfbAllocateFramebufferMemory(&vfb);
+    if (!pbits) {
+        ErrorF("Could not allocate resources for the new screen size\n");
+        return FALSE;
+    }
+
     // Prevent screen updates while we change things around
     SetRootClip(pScreen, ROOT_CLIP_NONE);
+
+    rootPixmap = pScreen->GetScreenPixmap(pScreen);
+    if (!pScreen->ModifyPixmapHeader(rootPixmap, vfb.width,
+                                     vfb.height, vfb.depth,
+                                     vfb.bitsPerPixel,
+                                     vfb.paddedBytesWidth,
+                                     vfb.pfbMemory)) {
+        ErrorF("Could not modify the pixmap header for the new screen size\n");
+        freeScreenInfo(&vfb);
+        SetRootClip(pScreen, ROOT_CLIP_FULL);
+        return FALSE;
+    }
 
     pScreen->width = width;
     pScreen->height = height;
     pScreen->mmWidth = mmWidth;
     pScreen->mmHeight = mmHeight;
 
+    freeScreenInfo(&vfbScreens[pScreen->myNum]);
+    vfbScreens[pScreen->myNum] = vfb;
+
     // Restore the ability to update screen, now with new dimensions
     SetRootClip(pScreen, ROOT_CLIP_FULL);
 
-    RRScreenSizeNotify (pScreen);
+    RRScreenSizeNotify(pScreen);
     RRTellChanged(pScreen);
 
     return RROutputSetPhysicalSize(pScrPriv->outputs[pScreen->myNum], mmWidth, mmHeight);
@@ -908,7 +957,8 @@ vfbRandRInit(ScreenPtr pScreen)
     pScrPriv->rrOutputValidateMode = vfbRROutputValidateMode;
     pScrPriv->rrModeDestroy = NULL;
 
-    RRScreenSetSizeRange(pScreen, 1, 1, pScreen->width, pScreen->height);
+    /* Set the max value to the max of card16 */
+    RRScreenSetSizeRange(pScreen, 1, 1, 32767, 32767);
 
     for (i = 0; i < pvfb->numCrtcs; i++) {
         vfbCrtcInfoPtr pvci = &pvfb->crtcs[i];
