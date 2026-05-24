@@ -42,6 +42,7 @@
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"
+#include "xf86Crtc.h"
 #include "extinit.h"
 
 #ifdef XF86VIDMODE
@@ -247,11 +248,16 @@ xf86VidModeSwitchMode(ScreenPtr pScreen, DisplayModePtr mode)
 {
     ScrnInfoPtr pScrn;
     DisplayModePtr pTmpMode;
+    xf86CrtcConfigPtr config;
     Bool retval;
 
     pScrn = xf86ScreenToScrn(pScreen);
     /* save in case we fail */
     pTmpMode = pScrn->currentMode;
+    /* let the driver resize the framebuffer */
+    config = XF86_CRTC_CONFIG_PTR(pScrn);
+    if (!(*config->funcs->resize) (pScrn, mode->HDisplay, mode->VDisplay))
+        return FALSE;
     /* Force a mode switch */
     pScrn->currentMode = NULL;
     retval = xf86SwitchMode(pScrn->pScreen, mode);
