@@ -682,6 +682,8 @@ _glamor_gradient_set_pixmap_destination(ScreenPtr screen,
            dst_picture->pDrawable->width, dst_picture->pDrawable->height);
 
     v = glamor_get_vbo_space(screen, 16 * sizeof(GLfloat), &vbo_offset);
+    if (!v)
+        return 0;
 
     glamor_set_normalize_vcoords_tri_strip(*xscale, *yscale,
                                            0, 0,

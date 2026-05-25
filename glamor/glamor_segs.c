@@ -70,6 +70,8 @@ glamor_poly_segment_solid_gl(DrawablePtr drawable, GCPtr gc,
     v = glamor_get_vbo_space(drawable->pScreen,
                              (nseg << add_last) * sizeof (xSegment),
                              &vbo_offset);
+    if (!v)
+        goto bail;
 
     glEnableVertexAttribArray(GLAMOR_VERTEX_POS);
     glVertexAttribPointer(GLAMOR_VERTEX_POS, 2, GL_SHORT, GL_FALSE,
