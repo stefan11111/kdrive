@@ -77,12 +77,32 @@ xf86_add_platform_device(struct OdevAttributes *attribs, Bool unowned)
 int
 xf86_remove_platform_device(int dev_index)
 {
-    int j;
+    int i, j, tmp_index;
 
     config_odev_free_attributes(xf86_platform_devices[dev_index].attribs);
 
-    for (j = dev_index; j < xf86_num_platform_devices - 1; j++)
+    /* Remove redundant members from the xf86_platform_devices[],
+     * and adjust the xf86Entities[i]->bus.id.plat pointer. */
+    if( dev_index !=  xf86_num_platform_devices -1 ) {
+        for(i=0; i<xf86NumEntities; i++) {
+            if( xf86Entities[i]->bus.id.plat == &xf86_platform_devices[dev_index] ) {
+                tmp_index = i;
+            }
+        }
+    }
+
+    for (j = dev_index; j < xf86_num_platform_devices - 1; j++) {
         memcpy(&xf86_platform_devices[j], &xf86_platform_devices[j + 1], sizeof(struct xf86_platform_device));
+
+        for(i=0; i<xf86NumEntities; i++) {
+            if( xf86Entities[i]->bus.id.plat == &xf86_platform_devices[j + 1] ) {
+                xf86Entities[i]->bus.id.plat = &xf86_platform_devices[j];
+            }
+        }
+    }
+
+    xf86Entities[tmp_index]->bus.id.plat = &xf86_platform_devices[xf86_num_platform_devices -1];
+
     xf86_num_platform_devices--;
     return 0;
 }
