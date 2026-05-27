@@ -181,6 +181,7 @@ xwayland_vars = [
     'have_enable_ei_portal=' + build_ei_portal.to_string(),
     'have_byteswappedclients=true',
     'have_hidpi=true',
+    'have_clipboard=true',
 ]
 
 pkgconfig = import('pkgconfig')
