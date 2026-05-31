@@ -174,7 +174,8 @@ xwl_present_has_pending_events(struct xwl_present_window *xwl_present_window)
 {
     present_vblank_ptr flip_pending = xwl_present_get_pending_flip(xwl_present_window);
 
-    return (flip_pending && flip_pending->sync_flip) ||
+    return (flip_pending &&
+            (flip_pending->sync_flip || !xwl_present_window->sync_callback)) ||
            !xorg_list_is_empty(&xwl_present_window->wait_list) ||
            !xorg_list_is_empty(&xwl_present_window->blocked_queue);
 }
@@ -256,7 +257,7 @@ xwl_present_get_exec_msc(uint32_t options, uint64_t target_msc)
     /* Synchronous Xwayland presentations always complete (at least) one frame after they
      * are executed
      */
-    if (options & PresentOptionAsyncMayTear)
+    if (options & PresentAllAsyncOptions)
         return target_msc;
 
     return target_msc - 1;
@@ -538,7 +539,8 @@ xwl_present_msc_bump(struct xwl_present_window *xwl_present_window)
 
     xwl_present_window->timer_armed = 0;
 
-    if (flip_pending && flip_pending->sync_flip)
+    if (flip_pending &&
+        (flip_pending->sync_flip || !xwl_present_window->sync_callback))
         xwl_present_flip_notify_vblank(flip_pending, xwl_present_window->ust, msc);
 
     xorg_list_for_each_entry_safe(vblank, tmp, &xwl_present_window->wait_list, event_queue) {
@@ -934,7 +936,8 @@ xwl_present_flip(present_vblank_ptr vblank, RegionPtr damage)
 
     if (xwl_window->tearing_control) {
         uint32_t hint;
-        if (event->options & PresentOptionAsyncMayTear)
+        /* Follow asynchronous Present requests for tearing hinting. */
+        if (event->options & (PresentOptionAsync | PresentOptionAsyncMayTear))
             hint = WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC;
         else
             hint = WP_TEARING_CONTROL_V1_PRESENTATION_HINT_VSYNC;
@@ -944,7 +947,11 @@ xwl_present_flip(present_vblank_ptr vblank, RegionPtr damage)
 
     wl_surface_commit(xwl_window->surface);
 
-    if (!vblank->sync_flip) {
+    /* Async flips are primarily retired from frame callbacks. If creating the
+     * frame callback failed, keep the wl_display_sync fallback so the queue can
+     * still make progress.
+     */
+    if (!vblank->sync_flip && !xwl_window->frame_callback && !xwl_present_window->sync_callback) {
         xwl_present_window->sync_callback =
             wl_display_sync(xwl_window->xwl_screen->display);
         wl_callback_add_listener(xwl_present_window->sync_callback,
