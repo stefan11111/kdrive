@@ -466,6 +466,14 @@ ms_present_unflip(ScreenPtr screen, uint64_t event_id)
 			    drmmode_crtc->drmmode->fb_id);
 		drmmode_crtc->drmmode->fb_id = 0;
 	}
+    }
+
+    for (i = 0; i < config->num_crtc; i++) {
+        xf86CrtcPtr crtc = config->crtc[i];
+	drmmode_crtc_private_ptr drmmode_crtc = crtc->driver_private;
+
+	if (!crtc->enabled)
+	    continue;
 
 	if (drmmode_crtc->dpms_mode == DPMSModeOn)
 	    crtc->funcs->set_mode_major(crtc, &crtc->mode, crtc->rotation,
