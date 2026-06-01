@@ -49,7 +49,9 @@
 #include <xf86drm.h>
 #include "xf86Crtc.h"
 #include "drmmode_display.h"
+#ifdef PRESENT
 #include "present.h"
+#endif
 
 #include <cursorstr.h>
 
@@ -233,8 +235,11 @@ get_drawable_modifiers(DrawablePtr draw, uint32_t format,
     ScrnInfoPtr scrn = xf86ScreenToScrn(draw->pScreen);
     modesettingPtr ms = modesettingPTR(scrn);
 
-    if (!present_can_window_flip((WindowPtr) draw) ||
-        !ms->drmmode.pageflip || ms->drmmode.dri2_flipping || !scrn->vtSema) {
+    if (!ms->drmmode.pageflip || ms->drmmode.dri2_flipping || !scrn->vtSema
+#ifdef PRESENT
+    || !present_can_window_flip((WindowPtr) draw)
+#endif
+        ) {
         *num_modifiers = 0;
         *modifiers = NULL;
         return TRUE;

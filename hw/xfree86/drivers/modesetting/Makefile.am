@@ -44,6 +44,10 @@ modesetting_drv_la_LDFLAGS = -module -avoid-version
 modesetting_drv_la_LIBADD = $(UDEV_LIBS) $(DRM_LIBS)
 modesetting_drv_ladir = @moduledir@/drivers
 
+if PRESENT
+present_c=present.c
+endif
+
 modesetting_drv_la_SOURCES = \
 	 dri2.c \
 	 driver.c \
@@ -52,7 +56,7 @@ modesetting_drv_la_SOURCES = \
 	 drmmode_display.h \
 	 dumb_bo.c \
 	 dumb_bo.h \
-	 present.c \
+	 $(present_c) \
 	 vblank.c \
 	 pageflip.c \
 	 $(NULL)
