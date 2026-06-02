@@ -237,9 +237,11 @@ OsSignal(int sig, OsSigHandlerPtr handler)
 #endif
 
 #ifndef LOCK_SERVER
-void
-LockServer(void)
-{}
+Bool
+LockServer(int num)
+{
+    return TRUE;
+}
 
 void
 UnlockServer(void)
@@ -252,11 +254,12 @@ static Bool nolock = FALSE;
 /*
  * LockServer --
  *      Check if the server lock file exists.  If so, check if the PID
- *      contained inside is valid.  If so, then die.  Otherwise, create
- *      the lock file containing the PID.
+ *      contained inside is valid.  Otherwise, create the lock file containing
+ *      the PID.  Return a bool indicating if lock was taken.  Die if problems
+ *      occur manipulating the lock file.
  */
-void
-LockServer(void)
+Bool
+LockServer(int num)
 {
     char tmp[PATH_MAX], pid_str[12];
     int lfd, i, haslock, l_pid, t;
@@ -265,11 +268,11 @@ LockServer(void)
     char port[20];
 
     if (nolock || NoListenAll)
-        return;
+        return TRUE;
     /*
      * Path names
      */
-    snprintf(port, sizeof(port), "%d", atoi(display));
+    snprintf(port, sizeof(port), "%d", num);
     len = strlen(LOCK_PREFIX) > strlen(LOCK_TMP_PREFIX) ? strlen(LOCK_PREFIX) :
         strlen(LOCK_TMP_PREFIX);
     len += strlen(tmppath) + strlen(port) + strlen(LOCK_SUFFIX) + 1;
@@ -365,10 +368,7 @@ LockServer(void)
                  * Process is still active.
                  */
                 unlink(tmp);
-                FatalError
-                    ("Server is already active for display %s\n%s %s\n%s\n",
-                     port, "\tIf this server is no longer running, remove",
-                     LockFile, "\tand start again.");
+                return FALSE;
             }
         }
         else {
@@ -382,6 +382,7 @@ LockServer(void)
     if (!haslock)
         FatalError("Could not create server lock file: %s\n", LockFile);
     StillLocking = FALSE;
+    return TRUE;
 }
 
 /*
@@ -395,7 +396,6 @@ UnlockServer(void)
         return;
 
     if (!StillLocking) {
-
         (void) unlink(LockFile);
     }
 }
@@ -764,9 +764,6 @@ ProcessCommandLine(int argc, char *argv[])
         else if (strcmp(argv[i], "-displayfd") == 0) {
             if (++i < argc) {
                 displayfd = atoi(argv[i]);
-#ifdef LOCK_SERVER
-                nolock = TRUE;
-#endif
             }
             else
                 UseMsg();
