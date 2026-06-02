@@ -790,7 +790,7 @@ InitAndStartDevices(void)
 /**
  * Free the given device class and reset the pointer to NULL.
  */
-static void
+void
 FreeDeviceClass(int type, void **class)
 {
     if (!(*class))
@@ -1041,7 +1041,7 @@ CloseDevice(DeviceIntPtr dev)
     free(dev->config_info);     /* Allocated in xf86ActivateDevice. */
     free(dev->last.scroll);
     for (j = 0; j < dev->last.num_touches; j++)
-        free(dev->last.touches[j].valuators);
+        valuator_mask_free(&dev->last.touches[j].valuators);
     free(dev->last.touches);
     dev->config_info = NULL;
     FreePendingFrozenDeviceEvents(dev);

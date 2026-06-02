@@ -187,6 +187,7 @@ freeScreenInfo(vfbScreenInfoPtr pvfb)
 
     case NORMAL_MEMORY_FB:
         free(pvfb->pXWDHeader);
+        pvfb->pXWDHeader = NULL;
         break;
     }
 }
