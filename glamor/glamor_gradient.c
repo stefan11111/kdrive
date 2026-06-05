@@ -559,7 +559,7 @@ _glamor_create_linear_gradient_program(ScreenPtr screen, int stops_count,
     return TRUE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_init_gradient_shader(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv;
@@ -652,7 +652,7 @@ _glamor_gradient_convert_trans_matrix(PictTransform *from, float to[3][3],
            to[1][0], to[1][1], to[1][2], to[2][0], to[2][1], to[2][2]);
 }
 
-static int
+static int GLAMOR_NONNULL_ARGS((1, 2, 3))
 _glamor_gradient_set_pixmap_destination(ScreenPtr screen,
                                         glamor_screen_private *glamor_priv,
                                         PicturePtr dst_picture,
@@ -814,7 +814,7 @@ _glamor_gradient_set_stops(PicturePtr src_picture, PictGradient *pgradient,
     return count;
 }
 
-PicturePtr
+PicturePtr GLAMOR_NONNULL_ARGS((1, 2))
 glamor_generate_radial_gradient_picture(ScreenPtr screen,
                                         PicturePtr src_picture,
                                         int x_source, int y_source,
@@ -1119,7 +1119,7 @@ glamor_generate_radial_gradient_picture(ScreenPtr screen,
     return NULL;
 }
 
-PicturePtr
+PicturePtr GLAMOR_NONNULL_ARGS((1, 2))
 glamor_generate_linear_gradient_picture(ScreenPtr screen,
                                         PicturePtr src_picture,
                                         int x_source, int y_source,

@@ -30,7 +30,7 @@
  * aligns exactly with chars
  */
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_get_glyphs(FontPtr font, glamor_font_t *glamor_font,
                   int count, char *chars, Bool sixteen, CharInfoPtr *charinfo)
 {
@@ -87,7 +87,7 @@ glamor_get_glyphs(FontPtr font, glamor_font_t *glamor_font,
  * Construct quads for the provided list of characters and draw them
  */
 
-static int
+static int GLAMOR_NONNULL_ARGS((1, 2, 3, 4))
 glamor_text(DrawablePtr drawable, GCPtr gc,
             glamor_font_t *glamor_font,
             glamor_program *prog,
@@ -272,7 +272,7 @@ static const glamor_facet glamor_facet_poly_text = {
     .locations = glamor_program_location_font,
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_text(DrawablePtr drawable, GCPtr gc,
                  int x, int y, int count, char *chars, Bool sixteen, int *final_pos)
 {
@@ -311,7 +311,7 @@ bail:
     return FALSE;
 }
 
-int
+int GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_text8(DrawablePtr drawable, GCPtr gc,
                    int x, int y, int count, char *chars)
 {
@@ -322,7 +322,7 @@ glamor_poly_text8(DrawablePtr drawable, GCPtr gc,
     return miPolyText8(drawable, gc, x, y, count, chars);
 }
 
-int
+int GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_text16(DrawablePtr drawable, GCPtr gc,
                     int x, int y, int count, unsigned short *chars)
 {
@@ -353,7 +353,7 @@ static const glamor_facet glamor_facet_image_text = {
     .locations = glamor_program_location_font,
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 use_image_solid(DrawablePtr drawable, GCPtr gc, glamor_program *prog, void *arg)
 {
     return glamor_set_solid(drawable, gc, FALSE, prog->fg_uniform);
@@ -366,7 +366,7 @@ static const glamor_facet glamor_facet_image_fill = {
     .use = use_image_solid,
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_te_text_use(DrawablePtr drawable, GCPtr gc, glamor_program *prog, void *arg)
 {
     if (!glamor_set_solid(drawable, gc, FALSE, prog->fg_uniform))
@@ -387,7 +387,7 @@ static const glamor_facet glamor_facet_te_text = {
     .use = glamor_te_text_use,
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_image_text(DrawablePtr drawable, GCPtr gc,
                   int x, int y, int count, char *chars,
                   Bool sixteen)
@@ -478,7 +478,7 @@ bail:
     return FALSE;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_image_text8(DrawablePtr drawable, GCPtr gc,
                    int x, int y, int count, char *chars)
 {
@@ -486,7 +486,7 @@ glamor_image_text8(DrawablePtr drawable, GCPtr gc,
         miImageText8(drawable, gc, x, y, count, chars);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_image_text16(DrawablePtr drawable, GCPtr gc,
                     int x, int y, int count, unsigned short *chars)
 {

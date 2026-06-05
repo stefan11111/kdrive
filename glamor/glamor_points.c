@@ -36,7 +36,7 @@ static const glamor_facet glamor_facet_point = {
                 GLAMOR_POS(gl_Position, primitive)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_point_gl(DrawablePtr drawable, GCPtr gc, int mode, int npt, DDXPointPtr ppt)
 {
     ScreenPtr screen = drawable->pScreen;
@@ -115,7 +115,7 @@ bail:
     return ret;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_point(DrawablePtr drawable, GCPtr gc, int mode, int npt,
                   DDXPointPtr ppt)
 {

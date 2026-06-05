@@ -23,14 +23,14 @@
 #ifndef _GLAMOR_PREPARE_H_
 #define _GLAMOR_PREPARE_H_
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access(DrawablePtr drawable, glamor_access_t access);
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access_box(DrawablePtr drawable, glamor_access_t access,
                          int x, int y, int w, int h);
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_finish_access(DrawablePtr drawable);
 
 Bool
@@ -43,10 +43,10 @@ glamor_prepare_access_picture_box(PicturePtr picture, glamor_access_t access,
 void
 glamor_finish_access_picture(PicturePtr picture);
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_prepare_access_gc(GCPtr gc);
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_finish_access_gc(GCPtr gc);
 
 #endif /* _GLAMOR_PREPARE_H_ */

@@ -406,12 +406,13 @@ static REF_TRANSFORM trans[2] = {
     {1.1643, 0.0, 1.7927, -0.2132, -0.5329, 2.1124, 0.0}        /* BT.709 */
 };
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_xv_render(glamor_port_private *port_priv, int id)
 {
     ScreenPtr screen = port_priv->pPixmap->drawable.pScreen;
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
     PixmapPtr pixmap = port_priv->pPixmap;
+    assert(pixmap != NULL);
     glamor_pixmap_private *pixmap_priv = glamor_get_pixmap_private(pixmap);
     glamor_pixmap_private *src_pixmap_priv[3];
     BoxPtr box = REGION_RECTS(&port_priv->clip);

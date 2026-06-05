@@ -41,7 +41,7 @@ static const glamor_facet glamor_facet_fillspans_120 = {
                 GLAMOR_POS(gl_Position, primitive.xy)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_fill_spans_gl(DrawablePtr drawable,
                      GCPtr gc,
                      int n, DDXPointPtr points, int *widths, int sorted)
@@ -153,7 +153,7 @@ bail:
     return ret;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_fill_spans_bail(DrawablePtr drawable,
                        GCPtr gc,
                        int n, DDXPointPtr points, int *widths, int sorted)
@@ -166,7 +166,7 @@ glamor_fill_spans_bail(DrawablePtr drawable,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_fill_spans(DrawablePtr drawable,
                   GCPtr gc,
                   int n, DDXPointPtr points, int *widths, int sorted)
@@ -176,7 +176,7 @@ glamor_fill_spans(DrawablePtr drawable,
     glamor_fill_spans_bail(drawable, gc, n, points, widths, sorted);
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1))
 glamor_get_spans_gl(DrawablePtr drawable, int wmax,
                     DDXPointPtr points, int *widths, int count, char *dst)
 {
@@ -241,7 +241,7 @@ bail:
     return FALSE;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1))
 glamor_get_spans_bail(DrawablePtr drawable, int wmax,
                  DDXPointPtr points, int *widths, int count, char *dst)
 {
@@ -250,7 +250,7 @@ glamor_get_spans_bail(DrawablePtr drawable, int wmax,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_get_spans(DrawablePtr drawable, int wmax,
                  DDXPointPtr points, int *widths, int count, char *dst)
 {
@@ -259,7 +259,7 @@ glamor_get_spans(DrawablePtr drawable, int wmax,
     glamor_get_spans_bail(drawable, wmax, points, widths, count, dst);
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_spans_gl(DrawablePtr drawable, GCPtr gc, char *src,
                     DDXPointPtr points, int *widths, int numPoints, int sorted)
 {
@@ -367,7 +367,7 @@ glamor_set_spans_bail(DrawablePtr drawable, GCPtr gc, char *src,
     glamor_finish_access(drawable);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_set_spans(DrawablePtr drawable, GCPtr gc, char *src,
                  DDXPointPtr points, int *widths, int numPoints, int sorted)
 {

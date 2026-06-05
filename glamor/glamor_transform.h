@@ -30,15 +30,17 @@ glamor_set_destination_drawable(DrawablePtr     drawable,
                                 Bool            center_offset,
                                 GLint           matrix_uniform_location,
                                 int             *p_off_x,
-                                int             *p_off_y);
+                                int             *p_off_y)
+    GLAMOR_NONNULL_ARGS((1));
 
 void
 glamor_set_color_depth(ScreenPtr      pScreen,
                        int            depth,
                        CARD32         pixel,
-                       GLint          uniform);
+                       GLint          uniform)
+    GLAMOR_NONNULL_ARGS((1));
 
-static inline void
+static inline void GLAMOR_NONNULL_ARGS((1))
 glamor_set_color(DrawablePtr    drawable,
                  CARD32         pixel,
                  GLint          uniform)
@@ -50,7 +52,8 @@ glamor_set_color(DrawablePtr    drawable,
 
 Bool
 glamor_set_texture_pixmap(PixmapPtr     texture,
-                          Bool          destination_red);
+                          Bool          destination_red)
+    GLAMOR_NONNULL_ARGS((1));
 
 Bool
 glamor_set_texture(PixmapPtr    texture,
@@ -58,26 +61,30 @@ glamor_set_texture(PixmapPtr    texture,
                    int          off_x,
                    int          off_y,
                    GLint        offset_uniform,
-                   GLint        size_uniform);
+                   GLint        size_uniform)
+    GLAMOR_NONNULL_ARGS((1));
 
 Bool
 glamor_set_solid(DrawablePtr    drawable,
                  GCPtr          gc,
                  Bool           use_alu,
-                 GLint          uniform);
+                 GLint          uniform)
+    GLAMOR_NONNULL_ARGS((1, 2));
 
 Bool
 glamor_set_tiled(DrawablePtr    drawable,
                  GCPtr          gc,
                  GLint          offset_uniform,
-                 GLint          size_uniform);
+                 GLint          size_uniform)
+    GLAMOR_NONNULL_ARGS((1, 2));
 
 Bool
 glamor_set_stippled(DrawablePtr    drawable,
                     GCPtr          gc,
                     GLint          fg_uniform,
                     GLint          offset_uniform,
-                    GLint          size_uniform);
+                    GLint          size_uniform)
+    GLAMOR_NONNULL_ARGS((1, 2));
 
 /*
  * Vertex shader bits that transform X coordinates to pixmap

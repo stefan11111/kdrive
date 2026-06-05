@@ -41,14 +41,14 @@ DevPrivateKeyRec glamor_screen_private_key;
 DevPrivateKeyRec glamor_pixmap_private_key;
 DevPrivateKeyRec glamor_gc_private_key;
 
-glamor_screen_private *
+glamor_screen_private * GLAMOR_NONNULL_ARGS((1))
 glamor_get_screen_private(ScreenPtr screen)
 {
     return (glamor_screen_private *)
         dixLookupPrivate(&screen->devPrivates, &glamor_screen_private_key);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_set_screen_private(ScreenPtr screen, glamor_screen_private *priv)
 {
     dixSetPrivate(&screen->devPrivates, &glamor_screen_private_key, priv);
@@ -65,7 +65,7 @@ glamor_set_screen_private(ScreenPtr screen, glamor_screen_private *priv)
  * redirected window, and the translation coordinates are provided by calling
  * exaGetOffscreenPixmap() on the drawable.
  */
-PixmapPtr
+PixmapPtr GLAMOR_NONNULL_ARGS((1))
 glamor_get_drawable_pixmap(DrawablePtr drawable)
 {
     if (drawable->type == DRAWABLE_WINDOW)
@@ -74,7 +74,7 @@ glamor_get_drawable_pixmap(DrawablePtr drawable)
         return (PixmapPtr) drawable;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_init_pixmap_private_small(PixmapPtr pixmap, glamor_pixmap_private *pixmap_priv)
 {
     pixmap_priv->box.x1 = 0;
@@ -89,7 +89,7 @@ glamor_init_pixmap_private_small(PixmapPtr pixmap, glamor_pixmap_private *pixmap
     pixmap_priv->fbo_array = &pixmap_priv->fbo;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_set_pixmap_type(PixmapPtr pixmap, glamor_pixmap_type_t type)
 {
     glamor_pixmap_private *pixmap_priv;
@@ -99,7 +99,7 @@ glamor_set_pixmap_type(PixmapPtr pixmap, glamor_pixmap_type_t type)
     glamor_init_pixmap_private_small(pixmap, pixmap_priv);
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_set_pixmap_texture(PixmapPtr pixmap, unsigned int tex)
 {
     ScreenPtr screen = pixmap->drawable.pScreen;
@@ -129,7 +129,7 @@ glamor_set_pixmap_texture(PixmapPtr pixmap, unsigned int tex)
     return TRUE;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_clear_pixmap(PixmapPtr pixmap)
 {
     ScreenPtr screen = pixmap->drawable.pScreen;
@@ -198,7 +198,7 @@ glamor_bind_texture(glamor_screen_private *glamor_priv, GLenum texture,
     }
 }
 
-PixmapPtr
+PixmapPtr GLAMOR_NONNULL_ARGS((1))
 glamor_create_pixmap(ScreenPtr screen, int w, int h, int depth,
                      unsigned int usage)
 {
@@ -262,7 +262,7 @@ glamor_create_pixmap(ScreenPtr screen, int w, int h, int depth,
     return pixmap;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_destroy_pixmap(PixmapPtr pixmap)
 {
     if (pixmap->refcnt == 1) {
@@ -272,14 +272,14 @@ glamor_destroy_pixmap(PixmapPtr pixmap)
     return fbDestroyPixmap(pixmap);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_block_handler(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
     glamor_flush(glamor_priv);
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1))
 _glamor_block_handler(ScreenPtr screen, void *timeout)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
@@ -423,7 +423,7 @@ glamor_setup_debug_output(ScreenPtr screen)
         glEnable(GL_DEBUG_OUTPUT);
 }
 
-const struct glamor_format *
+const struct glamor_format * GLAMOR_NONNULL_ARGS((1)) GLAMOR_NONNULL_RETURN
 glamor_format_for_pixmap(PixmapPtr pixmap)
 {
     ScreenPtr pScreen = pixmap->drawable.pScreen;
@@ -436,7 +436,7 @@ glamor_format_for_pixmap(PixmapPtr pixmap)
         return &glamor_priv->formats[pixmap->drawable.depth];
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1))
 glamor_add_format(ScreenPtr screen, int depth, CARD32 render_format,
                   GLenum internalformat, GLenum format, GLenum type,
                   Bool rendering_supported)
@@ -532,7 +532,7 @@ glamor_add_format(ScreenPtr screen, int depth, CARD32 render_format,
  * here, or channels will end up swizzled around.  Similarly, the
  * driver's visual masks also need to match what we're doing here.
  */
-static void
+static void GLAMOR_NONNULL_ARGS((1))
 glamor_setup_formats(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
@@ -892,7 +892,7 @@ glamor_init(ScreenPtr screen, unsigned int flags)
     return FALSE;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1))
 glamor_release_screen_priv(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv;
@@ -905,7 +905,7 @@ glamor_release_screen_priv(ScreenPtr screen)
     glamor_set_screen_private(screen, NULL);
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_close_screen(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv;
@@ -975,7 +975,7 @@ glamor_get_glvnd_vendor(ScreenPtr screen)
     return glamor_priv->glvnd_vendor;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_enable_dri3(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
@@ -983,7 +983,7 @@ glamor_enable_dri3(ScreenPtr screen)
     glamor_priv->dri3_enabled = TRUE;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_supports_pixmap_import_export(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);
@@ -991,7 +991,7 @@ glamor_supports_pixmap_import_export(ScreenPtr screen)
     return glamor_priv->dri3_enabled;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_set_drawable_modifiers_func(ScreenPtr screen,
                                    GetDrawableModifiersFuncPtr func)
 {
@@ -1000,7 +1000,7 @@ glamor_set_drawable_modifiers_func(ScreenPtr screen,
     glamor_priv->get_drawable_modifiers = func;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((1))
 glamor_get_drawable_modifiers(DrawablePtr draw, uint32_t format,
                               uint32_t *num_modifiers, uint64_t **modifiers)
 {
@@ -1016,7 +1016,7 @@ glamor_get_drawable_modifiers(DrawablePtr draw, uint32_t format,
     return TRUE;
 }
 
-static int
+static int GLAMOR_NONNULL_ARGS((2))
 _glamor_fds_from_pixmap(ScreenPtr screen, PixmapPtr pixmap, int *fds,
                         uint32_t *strides, uint32_t *offsets,
                         CARD32 *size, uint64_t *modifier)
@@ -1053,7 +1053,7 @@ _glamor_fds_from_pixmap(ScreenPtr screen, PixmapPtr pixmap, int *fds,
     return 0;
 }
 
-int
+int GLAMOR_NONNULL_ARGS((2))
 glamor_fds_from_pixmap(ScreenPtr screen, PixmapPtr pixmap, int *fds,
                        uint32_t *strides, uint32_t *offsets,
                        uint64_t *modifier)
@@ -1062,7 +1062,7 @@ glamor_fds_from_pixmap(ScreenPtr screen, PixmapPtr pixmap, int *fds,
                                    NULL, modifier);
 }
 
-int
+int GLAMOR_NONNULL_ARGS((2))
 glamor_fd_from_pixmap(ScreenPtr screen,
                       PixmapPtr pixmap, CARD16 *stride, CARD32 *size)
 {
@@ -1079,7 +1079,7 @@ glamor_fd_from_pixmap(ScreenPtr screen,
     return fd;
 }
 
-int
+int GLAMOR_NONNULL_ARGS((2))
 glamor_shareable_fd_from_pixmap(ScreenPtr screen,
                                 PixmapPtr pixmap, CARD16 *stride, CARD32 *size)
 {
@@ -1100,7 +1100,7 @@ glamor_shareable_fd_from_pixmap(ScreenPtr screen,
     return ret;
 }
 
-int
+int GLAMOR_NONNULL_ARGS((1))
 glamor_name_from_pixmap(PixmapPtr pixmap, CARD16 *stride, CARD32 *size)
 {
     glamor_pixmap_private *pixmap_priv = glamor_get_pixmap_private(pixmap);
@@ -1118,7 +1118,7 @@ glamor_name_from_pixmap(PixmapPtr pixmap, CARD16 *stride, CARD32 *size)
     return -1;
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1))
 glamor_finish(ScreenPtr screen)
 {
     glamor_screen_private *glamor_priv = glamor_get_screen_private(screen);

@@ -27,17 +27,20 @@ void
 glamor_upload_boxes(DrawablePtr drawable, BoxPtr in_boxes, int in_nbox,
                     int dx_src, int dy_src,
                     int dx_dst, int dy_dst,
-                    uint8_t *bits, uint32_t byte_stride);
+                    uint8_t *bits, uint32_t byte_stride)
+    GLAMOR_NONNULL_ARGS((1, 2, 8));
 
 void
 glamor_upload_region(DrawablePtr drawable, RegionPtr region,
                      int region_x, int region_y,
-                     uint8_t *bits, uint32_t byte_stride);
+                     uint8_t *bits, uint32_t byte_stride)
+    GLAMOR_NONNULL_ARGS((1, 2, 5));
 
 void
 glamor_download_boxes(DrawablePtr drawable, BoxPtr in_boxes, int in_nbox,
                       int dx_src, int dy_src,
                       int dx_dst, int dy_dst,
-                      uint8_t *bits, uint32_t byte_stride);
+                      uint8_t *bits, uint32_t byte_stride)
+    GLAMOR_NONNULL_ARGS((1, 2, 8));
 
 #endif /* _GLAMOR_TRANSFER_H_ */

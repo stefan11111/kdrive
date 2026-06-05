@@ -573,7 +573,7 @@ glamor_set_composite_op(ScreenPtr screen,
     return TRUE;
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 3, 4, 7))
 glamor_set_composite_texture(glamor_screen_private *glamor_priv, int unit,
                              PicturePtr picture,
                              PixmapPtr pixmap,
@@ -1486,7 +1486,7 @@ glamor_convert_gradient_picture(ScreenPtr screen,
     return dst;
 }
 
-Bool
+Bool GLAMOR_NONNULL_ARGS((8))
 glamor_composite_clipped_region(CARD8 op,
                                 PicturePtr source,
                                 PicturePtr mask,

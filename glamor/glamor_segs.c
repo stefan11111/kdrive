@@ -32,7 +32,7 @@ static const glamor_facet glamor_facet_poly_segment = {
                 GLAMOR_POS(gl_Position, primitive.xy)),
 };
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_segment_solid_gl(DrawablePtr drawable, GCPtr gc,
                              int nseg, xSegment *segs)
 {
@@ -119,7 +119,7 @@ bail:
     return ret;
 }
 
-static Bool
+static Bool GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_segment_gl(DrawablePtr drawable, GCPtr gc,
                        int nseg, xSegment *segs)
 {
@@ -141,7 +141,7 @@ glamor_poly_segment_gl(DrawablePtr drawable, GCPtr gc,
     }
 }
 
-static void
+static void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_segment_bail(DrawablePtr drawable, GCPtr gc,
                          int nseg, xSegment *segs)
 {
@@ -159,7 +159,7 @@ glamor_poly_segment_bail(DrawablePtr drawable, GCPtr gc,
         miPolySegment(drawable, gc, nseg, segs);
 }
 
-void
+void GLAMOR_NONNULL_ARGS((1, 2))
 glamor_poly_segment(DrawablePtr drawable, GCPtr gc,
                     int nseg, xSegment *segs)
 {
