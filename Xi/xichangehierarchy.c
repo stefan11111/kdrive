@@ -82,20 +82,24 @@ XISendDeviceHierarchyEvent(int flags[MAXDEVICES])
 
     info = (xXIHierarchyInfo *) &ev[1];
     for (dev = inputInfo.devices; dev; dev = dev->next) {
-        info->deviceid = dev->id;
-        info->enabled = dev->enabled;
-        info->use = GetDeviceUse(dev, &info->attachment);
-        info->flags = flags[dev->id];
-        ev->flags |= info->flags;
-        info++;
+        if (flags[dev->id] && !(flags[dev->id] & (XIMasterRemoved | XISlaveRemoved))) {
+            info->deviceid = dev->id;
+            info->enabled = dev->enabled;
+            info->use = GetDeviceUse(dev, &info->attachment);
+            info->flags = flags[dev->id];
+            ev->flags |= info->flags;
+            info++;
+        }
     }
     for (dev = inputInfo.off_devices; dev; dev = dev->next) {
-        info->deviceid = dev->id;
-        info->enabled = dev->enabled;
-        info->use = GetDeviceUse(dev, &info->attachment);
-        info->flags = flags[dev->id];
-        ev->flags |= info->flags;
-        info++;
+        if (flags[dev->id] && !(flags[dev->id] & (XIMasterRemoved | XISlaveRemoved))) {
+            info->deviceid = dev->id;
+            info->enabled = dev->enabled;
+            info->use = GetDeviceUse(dev, &info->attachment);
+            info->flags = flags[dev->id];
+            ev->flags |= info->flags;
+            info++;
+        }
     }
 
     for (i = 0; i < MAXDEVICES; i++) {
