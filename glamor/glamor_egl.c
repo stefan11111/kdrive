@@ -60,6 +60,7 @@ struct glamor_egl_screen_private {
     struct gbm_device *gbm;
     int dmabuf_capable;
     char *glvnd_vendor; /* GLVND vendor if forced from options or NULL otherwise */
+    Bool provider_enabled; /* if GLX provider is enabled in options */
 
     CloseScreenProcPtr saved_close_screen;
     DestroyPixmapProcPtr saved_destroy_pixmap;
@@ -950,7 +951,7 @@ glamor_egl_screen_init(ScreenPtr screen, struct glamor_context *glamor_ctx)
     }
 #endif
 #ifdef GLXEXT
-    if (!vendor_initialized) {
+    if (glamor_egl->provider_enabled && !vendor_initialized) {
         GlxPushProvider(&glamor_provider);
         xorgGlxCreateVendor();
         vendor_initialized = TRUE;
@@ -1080,12 +1081,14 @@ glamor_egl_try_gles_api(ScrnInfoPtr scrn)
 
 enum {
     GLAMOREGLOPT_RENDERING_API,
-    GLAMOREGLOPT_VENDOR_LIBRARY
+    GLAMOREGLOPT_VENDOR_LIBRARY,
+    GLAMOREGLOPT_GLX_PROVIDER
 };
 
 static const OptionInfoRec GlamorEGLOptions[] = {
     { GLAMOREGLOPT_RENDERING_API, "RenderingAPI", OPTV_STRING, {0}, FALSE },
     { GLAMOREGLOPT_VENDOR_LIBRARY, "GlxVendorLibrary", OPTV_STRING, {0}, FALSE },
+    { GLAMOREGLOPT_GLX_PROVIDER, "GlamorGlxProvider", OPTV_BOOLEAN, {0}, FALSE },
     { -1, NULL, OPTV_NONE, {0}, FALSE },
 };
 
@@ -1118,6 +1121,7 @@ glamor_egl_init(ScrnInfoPtr scrn, int fd)
         force_es = TRUE;
     else if (api && !strncasecmp(api, "gl", 2))
         es_allowed = FALSE;
+    glamor_egl->provider_enabled = xf86ReturnOptValBool(GlamorEGLOptions, GLAMOREGLOPT_GLX_PROVIDER, TRUE);
     free(options);
 
     scrn->privates[xf86GlamorEGLPrivateIndex].ptr = glamor_egl;
