@@ -594,8 +594,12 @@ UseMsg(void)
 /*  This function performs a rudimentary sanity check
  *  on the display name passed in on the command-line,
  *  since this string is used to generate filenames.
- *  It is especially important that the display name
- *  not contain a "/" and not start with a "-".
+ *  The string must either be a filename starting with "/",
+ *  or a sequence of 1-3 numbers separated by ".".
+ *
+ *  It is especially important that the display name not
+ *  start with "-", and if the display name does not start
+ *  with "/", then it must not contain a "/"
  *                                            --kvajk
  */
 static int
@@ -613,6 +617,8 @@ VerifyDisplayName(const char *d)
         return 0;               /*  could be confused for an option  */
     if (*d == '.')
         return 0;               /*  must not equal "." or ".."  */
+    if (*d == '/')
+        return 1;
     if (strchr(d, '/') != (char *) 0)
         return 0;               /*  very important!!!  */
 
@@ -850,7 +856,7 @@ ProcessCommandLine(int argc, char *argv[])
 #ifdef LOCK_SERVER
         else if (strcmp(argv[i], "-nolock") == 0) {
 #if !defined(WIN32) && !defined(__CYGWIN__)
-            if (getuid() != 0)
+            if (getuid() != 0 && PrivsElevated())
                 ErrorF
                     ("Warning: the -nolock option can only be used by root\n");
             else

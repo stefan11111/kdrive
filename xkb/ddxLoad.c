@@ -112,6 +112,7 @@ RunXkbComp(xkbcomp_buffer_callback callback, void *userdata)
     char *xkbbasedirflag = NULL;
     const char *xkbbindir = emptystring;
     const char *xkbbindirsep = emptystring;
+    int i;
 
 #ifdef WIN32
     /* WIN32 has no popen. The input must be stored in a file which is
@@ -123,6 +124,9 @@ RunXkbComp(xkbcomp_buffer_callback callback, void *userdata)
 #endif
 
     snprintf(keymap, sizeof(keymap), "server-%s", display);
+    for (i = 0; keymap[i] != '\0'; i++)
+        if (keymap[i] == '/')
+            keymap[i] = '_';
 
     OutputDirectory(xkm_output_dir, sizeof(xkm_output_dir));
 
