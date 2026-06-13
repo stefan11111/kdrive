@@ -175,6 +175,7 @@ typedef struct _DbeScreenPrivRec {
      */
     PositionWindowProcPtr PositionWindow;
     DestroyWindowProcPtr DestroyWindow;
+    CloseScreenProcPtr CloseScreen;
 
     /* Per-screen DIX routines */
     Bool (*SetupBackgroundPainter) (WindowPtr /*pWin */ ,
