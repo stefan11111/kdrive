@@ -384,6 +384,30 @@ glamor_copy_fbo_fbo_draw(DrawablePtr src,
     if (bitplane && !glamor_priv->can_copyplane)
         goto bail_ctx;
 
+    /* Try blit directly. */
+    if (!bitplane && (!gc || gc->alu == GXcopy) && nbox == 1 && src_pixmap != dst_pixmap &&
+        glamor_pixmap_hcnt(src_priv) == 1 && glamor_pixmap_hcnt(dst_priv) == 1) {
+        int dst_samples, src_samples;
+
+        /* Assume DSA is available for simplicity. */
+        glGetNamedFramebufferParameteriv(src_priv->fbo->fb, GL_SAMPLES, &src_samples);
+        glGetNamedFramebufferParameteriv(dst_priv->fbo->fb, GL_SAMPLES, &dst_samples);
+
+        if (src_samples == dst_samples) {
+            glamor_get_drawable_deltas(src, src_pixmap, &src_off_x, &src_off_y);
+            glamor_get_drawable_deltas(dst, dst_pixmap, &dst_off_x, &dst_off_y);
+
+            glBlitNamedFramebuffer(
+                src_priv->fbo->fb, dst_priv->fbo->fb,
+                box[0].x1 + dx + src_off_x, box[0].y1 + dy + src_off_y,
+                    box[0].x2 + dx + src_off_x, box[0].y2 + dy + src_off_y,
+                box[0].x1 + dst_off_x, box[0].y1 + dst_off_y,
+                    box[0].x2 + dst_off_x, box[0].y2 + dst_off_y,
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            return TRUE;
+        }
+    }
+
     if (bitplane) {
         prog = &glamor_priv->copy_plane_prog;
         copy_facet = &glamor_facet_copyplane;
