@@ -651,9 +651,10 @@ xf86OutputCreate(ScrnInfoPtr scrn,
     }
     output->subpixel_order = SubPixelUnknown;
     /*
-     * Use the old per-screen monitor section for the first output
+     * Use the old per-screen monitor section for all outputs that are
+     * not explicitly associated to a given monitor.
      */
-    output->use_screen_monitor = (xf86_config->num_output == 0);
+    output->use_screen_monitor = 1;
 #ifdef RANDR_12_INTERFACE
     output->randr_output = NULL;
 #endif

@@ -1607,7 +1607,7 @@ following format:
 for a VGA output)
 .PP
 In the absence of specific association of monitor sections to outputs, if a
-monitor section is present the server will associate it with an output to
+monitor section is present the server will associate it with all outputs to
 preserve compatibility for previous single-head configurations.
 .PP
 Specifying video modes is optional because the server will use the DDC or other
