@@ -144,22 +144,6 @@ gbm_format_for_depth(int depth, int gles)
     }
 }
 
-static char
-is_device_path_render_node (const char *device_path)
-{
-    char is_render_node;
-    int fd;
-
-    fd = open(device_path, O_RDWR | O_CLOEXEC);
-    if (fd < 0)
-        return 0;
-
-    is_render_node = (drmGetNodeTypeFromFd(fd) == DRM_NODE_RENDER);
-    close(fd);
-
-    return is_render_node;
-}
-
 static PixmapPtr
 xwl_glamor_gbm_create_pixmap_for_bo(ScreenPtr screen, struct gbm_bo *bo,
                                     int depth,
@@ -1255,58 +1239,23 @@ static dri3_screen_info_rec xwl_dri3_info = {
 };
 #endif /* DRI3 */
 
-static const char *
-get_render_node_path_for_device(const drmDevicePtr drm_device,
-                                const char *device_path)
-{
-    const char *render_node_path;
-    int i;
-
-    if (!(drm_device->available_nodes & (1 << DRM_NODE_RENDER)))
-        return NULL;
-    render_node_path = drm_device->nodes[DRM_NODE_RENDER];
-
-    for (i = 0; i < DRM_NODE_MAX; i++) {
-        if (!(drm_device->available_nodes & (1 << i)))
-            continue;
-        if (strcmp(device_path, drm_device->nodes[i]) == 0)
-            return render_node_path;
-    }
-
-    return NULL;
-}
-
 static char *
-get_render_node_path(const char *device_path)
+get_render_node_path(const char* device)
 {
-    drmDevicePtr *devices = NULL;
-    char *render_node_path = NULL;
-    int i, n_devices, max_devices;
+    int fd = -1;
+    char *path = NULL;
 
-    max_devices = drmGetDevices2(0, NULL, 0);
-    if (max_devices <= 0)
-        goto out;
+    fd = open(device, O_RDWR | O_CLOEXEC);
+    if (fd < 0)
+        return NULL;
 
-    devices = calloc(max_devices, sizeof(drmDevicePtr));
-    if (!devices)
-        goto out;
+    if (drmGetNodeTypeFromFd(fd) != DRM_NODE_RENDER)
+        path = drmGetRenderDeviceNameFromFd(fd);
+    else
+        path = strdup(device);
 
-    n_devices = drmGetDevices2(0, devices, max_devices);
-    if (n_devices < 0)
-        goto out;
-
-    for (i = 0; i < n_devices; i++) {
-       const char *node_path = get_render_node_path_for_device(devices[i],
-                                                               device_path);
-       if (node_path) {
-           render_node_path = strdup(node_path);
-           break;
-       }
-    }
-
-out:
-    free(devices);
-    return render_node_path;
+    close(fd);
+    return path;
 }
 
 static void
@@ -1315,16 +1264,8 @@ xwl_drm_handle_device(void *data, struct wl_drm *drm, const char *device)
    struct xwl_screen *xwl_screen = data;
    struct xwl_gbm_private *xwl_gbm = xwl_gbm_get(xwl_screen);
    drm_magic_t magic;
-   char *render_node_path = NULL;
 
-   if (!is_device_path_render_node(device))
-       render_node_path = get_render_node_path(device);
-
-   if (render_node_path)
-       xwl_gbm->device_name = render_node_path;
-   else
-       xwl_gbm->device_name = strdup(device);
-
+   xwl_gbm->device_name = get_render_node_path(device);
    if (!xwl_gbm->device_name) {
        xwl_glamor_gbm_cleanup(xwl_screen);
        xwl_screen->expecting_event--;
