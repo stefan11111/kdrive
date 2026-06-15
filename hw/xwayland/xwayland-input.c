@@ -3189,12 +3189,19 @@ input_handler(void *data, struct wl_registry *registry, uint32_t id,
         init_keyboard_shortcuts_inhibit(xwl_screen, id, version);
     } else if (strcmp(interface, xdg_system_bell_v1_interface.name) == 0) {
         init_system_bell(xwl_screen, id, version);
+    } else if (strcmp(interface, wl_fixes_interface.name) == 0) {
+        xwl_screen->input_fixes =
+            wl_registry_bind(registry, id, &wl_fixes_interface, min(version, 2));
     }
 }
 
 static void
 global_remove(void *data, struct wl_registry *registry, uint32_t name)
 {
+    struct xwl_screen *xwl_screen = data;
+
+    if (xwl_screen->input_fixes && wl_fixes_get_version(xwl_screen->input_fixes) >= WL_FIXES_ACK_GLOBAL_REMOVE_SINCE_VERSION)
+        wl_fixes_ack_global_remove(xwl_screen->input_fixes, xwl_screen->input_registry, name);
 }
 
 static const struct wl_registry_listener input_listener = {
