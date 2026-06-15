@@ -157,6 +157,7 @@ PictureAddFilter(ScreenPtr pScreen,
     ps->filters[i].ValidateParams = ValidateParams;
     ps->filters[i].width = width;
     ps->filters[i].height = height;
+    ps->filters[i].tempCopy = FALSE;
     return id;
 }
 

@@ -168,6 +168,7 @@ typedef struct {
     int id;
     PictFilterValidateParamsProcPtr ValidateParams;
     int width, height;
+    Bool tempCopy;
 } PictFilterRec, *PictFilterPtr;
 
 #define PictFilterNearest	0

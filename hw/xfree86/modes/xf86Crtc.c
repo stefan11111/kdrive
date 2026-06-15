@@ -152,6 +152,7 @@ xf86CrtcDestroy(xf86CrtcPtr crtc)
             xf86_config->num_crtc--;
             break;
         }
+    RRTransformFini(&crtc->transform);
     free(crtc->params);
     free(crtc->gamma_red);
     free(crtc);
@@ -260,6 +261,54 @@ xf86CrtcSetScreenSubpixelOrder(ScreenPtr pScreen)
     PictureSetSubpixelOrder(pScreen, subpixel_order);
 }
 
+static Bool
+xf86CrtcCopyTransformFilter(RRTransformPtr transform)
+{
+    PictFilterRec *filter;
+    PictFilterRec *filterCopy;
+
+    filter = transform->filter;
+    if (filter->tempCopy)
+        return TRUE;
+
+    filterCopy = malloc(sizeof(PictFilterRec));
+    if (!filterCopy)
+        return FALSE;
+
+    memcpy(filterCopy, filter, sizeof(PictFilterRec));
+    filterCopy->name = strdup(filter->name);
+    filterCopy->tempCopy = TRUE;
+
+    transform->filter = filterCopy;
+    return TRUE;
+}
+
+static Bool
+xf86CrtcTryRestoreTransformFilterCopy(ScreenPtr pScreen, RRTransformPtr transform)
+{
+    PictFilterPtr actualFilter;
+    PictFilterPtr filterCopy;
+
+    if (!transform->filter->tempCopy)
+        return TRUE;
+
+    filterCopy = transform->filter;
+    actualFilter = PictureFindFilter(pScreen, filterCopy->name, -1);
+    if (!actualFilter) {
+        if (PictureAddFilter(pScreen, filterCopy->name,
+                             filterCopy->ValidateParams,
+                             filterCopy->width, filterCopy->height) > -1)
+            actualFilter = PictureFindFilter(pScreen, filterCopy->name, -1);
+    }
+
+    free(filterCopy->name);
+    free(filterCopy);
+
+    transform->filter = actualFilter;
+
+    return transform->filter != NULL;
+}
+
 /**
  * Sets the given video mode on the given crtc
  */
@@ -295,7 +344,8 @@ xf86CrtcSetModeTransform(xf86CrtcPtr crtc, DisplayModePtr mode,
     saved_x = crtc->x;
     saved_y = crtc->y;
     saved_rotation = crtc->rotation;
-    if (crtc->transformPresent) {
+    if (crtc->transformPresent &&
+        xf86CrtcTryRestoreTransformFilterCopy(scrn->pScreen, &crtc->transform)) {
         RRTransformInit(&saved_transform);
         RRTransformCopy(&saved_transform, &crtc->transform);
     }
@@ -786,6 +836,15 @@ xf86CrtcCloseScreen(ScreenPtr screen)
         xf86CrtcPtr crtc = config->crtc[c];
 
         crtc->randr_crtc = NULL;
+
+        if (crtc->transformPresent) {
+            if (!xf86CrtcCopyTransformFilter(&crtc->transform))
+                crtc->transformPresent = FALSE;
+        }
+        if (crtc->desiredTransformPresent) {
+            if (!xf86CrtcCopyTransformFilter(&crtc->desiredTransform))
+                crtc->desiredTransformPresent = FALSE;
+        }
     }
 
     screen->CloseScreen = config->CloseScreen;
@@ -2863,12 +2922,17 @@ xf86SetDesiredModes(ScrnInfoPtr scrn)
             crtc->desiredTransformPresent = FALSE;
             crtc->desiredX = 0;
             crtc->desiredY = 0;
+            RRTransformFini(&crtc->desiredTransform);
         }
 
-        if (crtc->desiredTransformPresent)
+        if (crtc->desiredTransformPresent &&
+            xf86CrtcTryRestoreTransformFilterCopy(scrn->pScreen,
+                                                  &crtc->desiredTransform)) {
             transform = &crtc->desiredTransform;
-        else
+        } else {
+            crtc->desiredTransformPresent = FALSE;
             transform = NULL;
+        }
         if (xf86CrtcSetModeTransform
             (crtc, &crtc->desiredMode, crtc->desiredRotation, transform,
              crtc->desiredX, crtc->desiredY)) {
@@ -3009,6 +3073,7 @@ xf86SetSingleMode(ScrnInfoPtr pScrn, DisplayModePtr desired, Rotation rotation)
             crtc->desiredTransformPresent = FALSE;
             crtc->desiredX = 0;
             crtc->desiredY = 0;
+            RRTransformFini(&crtc->desiredTransform);
         }
     }
     xf86DisableUnusedFunctions(pScrn);

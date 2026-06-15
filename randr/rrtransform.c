@@ -37,6 +37,10 @@ RRTransformInit(RRTransformPtr transform)
 void
 RRTransformFini(RRTransformPtr transform)
 {
+    if (transform->filter && transform->filter->tempCopy) {
+        free(transform->filter->name);
+        free(transform->filter);
+    }
     free(transform->params);
 }
 
