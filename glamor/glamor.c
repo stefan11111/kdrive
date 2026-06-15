@@ -237,6 +237,7 @@ glamor_create_pixmap(ScreenPtr screen, int w, int h, int depth,
 
     if (usage == GLAMOR_CREATE_PIXMAP_NO_TEXTURE) {
         glamor_init_pixmap_private_small(pixmap, pixmap_priv);
+        glamor_debug_pixmap_alloc("pixmap %p\n", pixmap);
         return pixmap;
     }
     else if (usage == GLAMOR_CREATE_NO_LARGE ||
@@ -258,6 +259,7 @@ glamor_create_pixmap(ScreenPtr screen, int w, int h, int depth,
     }
 
     glamor_pixmap_attach_fbo(pixmap, fbo);
+    glamor_debug_pixmap_alloc("pixmap %p\n", pixmap);
 
     return pixmap;
 }
@@ -266,6 +268,7 @@ Bool
 glamor_destroy_pixmap(PixmapPtr pixmap)
 {
     if (pixmap->refcnt == 1) {
+        glamor_debug_pixmap_alloc("pixmap %p\n", pixmap);
         glamor_pixmap_destroy_fbo(pixmap);
     }
 

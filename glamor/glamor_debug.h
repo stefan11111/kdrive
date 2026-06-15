@@ -34,6 +34,7 @@
 #define GLAMOR_DEBUG_FALLBACK                 1
 #define GLAMOR_DEBUG_TEXTURE_DOWNLOAD         2
 #define GLAMOR_DEBUG_TEXTURE_DYNAMIC_UPLOAD   3
+#define GLAMOR_DEBUG_PIXMAP_ALLOC             4
 
 #define GLAMOR_PANIC(_format_, ...)			\
   do {							\
@@ -64,6 +65,13 @@
     if (glamor_debug_level >= GLAMOR_DEBUG_FALLBACK)	\
       __debug_output_message(_format_,			\
 			     "Glamor fallback",		\
+			     ##__VA_ARGS__);} while(0)
+
+#define glamor_debug_pixmap_alloc(_format_,...)		\
+  do {							\
+    if (glamor_debug_level >= GLAMOR_DEBUG_PIXMAP_ALLOC)	\
+      __debug_output_message(_format_,			\
+			     "Glamor pixmap alloc",	\
 			     ##__VA_ARGS__);} while(0)
 
 #define DEBUGF(str, ...)  do {} while(0)
