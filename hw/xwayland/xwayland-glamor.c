@@ -50,6 +50,8 @@
 
 #include <sys/mman.h>
 
+#include <scrnintstr.h>
+
 static void
 glamor_egl_make_current(struct glamor_context *glamor_ctx)
 {
@@ -267,4 +269,25 @@ xwl_glamor_init(struct xwl_screen *xwl_screen)
 #endif
 
     return TRUE;
+}
+
+void
+xwl_glamor_cleanup_all_screens(void)
+{
+    int i;
+
+    for (i = 0; i < screenInfo.numScreens; i++) {
+        ScreenPtr screen = screenInfo.screens[i];
+        struct xwl_screen *xwl_screen;
+
+        if (!screen)
+            continue;
+
+        xwl_screen = xwl_screen_get(screen);
+        if (!xwl_screen)
+            continue;
+
+        xwl_glamor_gbm_cleanup_egl(xwl_screen);
+        xwl_glamor_gbm_cleanup(xwl_screen);
+    }
 }

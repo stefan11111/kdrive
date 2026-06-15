@@ -61,6 +61,9 @@ extern _X_EXPORT Bool noXFree86VidModeExtension;
 void
 ddxGiveUp(enum ExitCode error)
 {
+#ifdef XWL_HAS_GLAMOR
+    xwl_glamor_cleanup_all_screens();
+#endif
 }
 
 void

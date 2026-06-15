@@ -91,6 +91,10 @@ xwl_give_up(const char *f, ...)
     VErrorFSigSafe(f, args);
     va_end(args);
 
+#ifdef XWL_HAS_GLAMOR
+    xwl_glamor_cleanup_all_screens();
+#endif
+
     CloseWellKnownConnections();
     OsCleanup(TRUE);
     fflush(stderr);
@@ -237,9 +241,11 @@ Bool
 xwl_close_screen(ScreenPtr screen)
 {
     struct xwl_screen *xwl_screen = xwl_screen_get(screen);
+    CloseScreenProcPtr close_screen = xwl_screen->CloseScreen;
     struct xwl_output *xwl_output, *next_xwl_output;
     struct xwl_seat *xwl_seat, *next_xwl_seat;
     struct xwl_wl_surface *xwl_wl_surface, *xwl_wl_surface_next;
+    Bool ret;
 #ifdef XWL_HAS_GLAMOR
     xwl_dmabuf_feedback_destroy(&xwl_screen->default_feedback);
 #endif
@@ -281,13 +287,19 @@ xwl_close_screen(ScreenPtr screen)
 
     RemoveNotifyFd(xwl_screen->wayland_fd);
 
-    wl_display_disconnect(xwl_screen->display);
+    screen->CloseScreen = close_screen;
+    ret = close_screen(screen);
 
-    screen->CloseScreen = xwl_screen->CloseScreen;
+#ifdef XWL_HAS_GLAMOR
+    xwl_glamor_gbm_cleanup_egl(xwl_screen);
+    xwl_glamor_gbm_cleanup(xwl_screen);
+#endif
+
+    wl_display_disconnect(xwl_screen->display);
 
     free(xwl_screen);
 
-    return screen->CloseScreen(screen);
+    return ret;
 }
 
 static struct xwl_seat *
@@ -1185,6 +1197,8 @@ xwl_screen_init(ScreenPtr pScreen, int argc, char **argv)
 #ifdef XWL_HAS_GLAMOR
     if (xwl_screen->glamor && !xwl_glamor_init(xwl_screen)) {
        ErrorF("Failed to initialize glamor, falling back to sw\n");
+       xwl_glamor_gbm_cleanup_egl(xwl_screen);
+       xwl_glamor_gbm_cleanup(xwl_screen);
        xwl_screen->glamor = XWL_GLAMOR_NONE;
     }
 #endif
