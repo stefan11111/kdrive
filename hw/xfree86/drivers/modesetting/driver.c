@@ -100,6 +100,9 @@ static const struct pci_id_match ms_device_match[] = {
     {
      PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY,
      0x00030000, 0x00ff0000, 0},
+    {
+     PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY,
+     0x00040000, 0x00ff0000, 0},
 
     {0, 0, 0},
 };
