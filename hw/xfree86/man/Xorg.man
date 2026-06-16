@@ -308,6 +308,9 @@ sources. This is equivalent to setting the
 file option. To
 .B false.
 .TP 8
+.B \-noDbus
+Do not connect to D-Bus.
+.TP 8
 .B \-nosilk
 Disable Silken Mouse support.
 .TP 8

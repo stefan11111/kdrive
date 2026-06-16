@@ -687,6 +687,9 @@ Unset by default.
 .TP 7
 .BI "Option \*qAllowByteSwappedClients\*q  \*q" boolean \*q
 Allow clients with a different byte-order than the server. Disabled by default.
+.TP 7
+.BI "Option \*qNoDbus\*q  \*q" boolean \*q
+Do not connect to D-Bus.
 .SH "MODULE SECTION"
 The
 .B Module

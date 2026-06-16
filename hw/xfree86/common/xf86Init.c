@@ -335,8 +335,10 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
         if (xf86DoShowOptions)
             DoShowOptions();
 
-        dbus_core_init();
-        systemd_logind_init();
+        if (!xf86Info.noDbus) {
+            dbus_core_init();
+            systemd_logind_init();
+        }
 
         /* Do a general bus probe.  This will be a PCI probe for x86 platforms */
         xf86BusProbe();
@@ -844,8 +846,10 @@ ddxGiveUp(enum ExitCode error)
     if (xorgHWOpenConsole)
         xf86CloseConsole();
 
-    systemd_logind_fini();
-    dbus_core_fini();
+    if (!xf86Info.noDbus) {
+        systemd_logind_fini();
+        dbus_core_fini();
+    }
 
     xf86CloseLog(error);
 }
@@ -967,6 +971,10 @@ ddxProcessArgument(int argc, char **argv, int i)
 #endif
     if (!strcmp(argv[i], "-allowMouseOpenFail")) {
         xf86AllowMouseOpenFail = TRUE;
+        return 1;
+    }
+    if (!strcmp(argv[i], "-noDbus")) {
+        xf86DbusDisabled = TRUE;
         return 1;
     }
     if (!strcmp(argv[i], "-ignoreABI")) {
