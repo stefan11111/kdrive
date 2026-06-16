@@ -1382,7 +1382,7 @@ xwl_present_init(ScreenPtr screen)
 
     xwl_screen->present_capabilities = XWL_PRESENT_CAPS;
 #ifdef XWL_HAS_GLAMOR
-    if (xwl_glamor_supports_syncobjs(xwl_screen))
+    if (xwl_screen->explicit_sync)
         xwl_screen->present_capabilities |=
             PresentCapabilitySyncobj;
 #endif /* XWL_HAS_GLAMOR */
