@@ -5,6 +5,7 @@
 #ifdef XSERVER_PLATFORM_BUS
 
 #include <xf86drm.h>
+#include <xf86drmMode.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -19,6 +20,22 @@
 
 #include "hotplug.h"
 #include "systemd-logind.h"
+
+static int
+CountConnectors(int fd)
+{
+    int connectors = 0;
+    drmModeResPtr res;
+
+    res = drmModeGetResources(fd);
+    if (!res)
+        return 0;
+
+    connectors = res->count_connectors;
+    drmModeFreeResources(res);
+
+    return connectors;
+}
 
 static Bool
 get_drm_info(struct OdevAttributes *attribs, char *path, int delayed_index)
@@ -65,6 +82,10 @@ get_drm_info(struct OdevAttributes *attribs, char *path, int delayed_index)
 
     xf86_platform_odev_attributes(delayed_index)->driver = XNFstrdup(v->name);
     drmFreeVersion(v);
+
+    xf86_platform_odev_attributes(delayed_index)->num_connectors = CountConnectors(fd);
+    xf86DrvMsg(-1, X_DEBUG, "%s has %d connectors\n",
+            path, xf86_platform_odev_attributes(delayed_index)->num_connectors);
 
 out:
     if (!server_fd)

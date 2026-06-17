@@ -815,16 +815,39 @@ void xf86platformVTProbe(void)
 
 void xf86platformPrimary(void)
 {
-    /* use the first platform device as a fallback */
-    if (primaryBus.type == BUS_NONE) {
-        xf86Msg(X_INFO, "no primary bus or device found\n");
+    struct xf86_platform_device *dev;
+    struct OdevAttributes *attribs;
+    int i;
 
-        if (xf86_num_platform_devices > 0) {
-            primaryBus.id.plat = &xf86_platform_devices[0];
+    /* only deal when no primary device has been detected */
+    if (primaryBus.type != BUS_NONE)
+        return;
+
+    /* set it to the first platform device detected with output connector capabilities */
+    for (i = 0; i < xf86_num_platform_devices; i++) {
+        dev = &xf86_platform_devices[i];
+	attribs = xf86_platform_device_odev_attributes(dev);
+
+        if (attribs->num_connectors > 0) {
+            primaryBus.id.plat = dev;
             primaryBus.type = BUS_PLATFORM;
 
-            xf86Msg(X_NONE, "\tfalling back to %s\n", primaryBus.id.plat->attribs->syspath);
+            xf86Msg(X_INFO, "Choose %s as primary device\n", attribs->syspath);
+            return;
         }
+    }
+
+    /* finally, use the first platform device as a fallback */
+    xf86Msg(X_INFO, "no primary bus or device found\n");
+
+    if (xf86_num_platform_devices > 0) {
+        dev = &xf86_platform_devices[0];
+        attribs = xf86_platform_device_odev_attributes(dev);
+
+        primaryBus.id.plat = dev;
+        primaryBus.type = BUS_PLATFORM;
+
+        xf86Msg(X_NONE, "\tfalling back to %s\n", attribs->syspath);
     }
 }
 #endif

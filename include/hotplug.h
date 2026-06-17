@@ -35,7 +35,7 @@ extern _X_EXPORT void config_fini(void);
 /* Bump this each time you add something to the struct
  * so that drivers can easily tell what is available
  */
-#define ODEV_ATTRIBUTES_VERSION         1
+#define ODEV_ATTRIBUTES_VERSION         2
 
 struct OdevAttributes {
     /* path to kernel device node - Linux e.g. /dev/dri/card0 */
@@ -58,6 +58,9 @@ struct OdevAttributes {
 
     /* kernel driver name */
     char        *driver;
+
+    /* Amount of display connectors */
+    int         num_connectors;
 };
 
 /* Note starting with xserver 1.16 this function never fails */
