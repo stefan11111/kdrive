@@ -171,7 +171,7 @@ glamor_egl_fd_name_from_pixmap(ScreenPtr screen,
                                PixmapPtr pixmap,
                                CARD16 *stride, CARD32 *size)
 {
-    return 0;
+    return -1;
 }
 
 int
