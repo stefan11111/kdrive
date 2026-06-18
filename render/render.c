@@ -989,7 +989,6 @@ ProcRenderFreeGlyphSet(ClientPtr client)
 typedef struct _GlyphNew {
     Glyph id;
     GlyphPtr glyph;
-    Bool found;
     unsigned char sha1[20];
 } GlyphNewRec, *GlyphNewPtr;
 
@@ -1009,7 +1008,7 @@ ProcRenderAddGlyphs(ClientPtr client)
     CARD8 *bits;
     unsigned int size;
     int err;
-    int i, screen;
+    int i, j, screen;
     PicturePtr pSrc = NULL, pDst = NULL;
     PixmapPtr pSrcPix = NULL, pDstPix = NULL;
     CARD32 component_alpha;
@@ -1079,14 +1078,21 @@ ProcRenderAddGlyphs(ClientPtr client)
 
         glyph_new->glyph = FindGlyphByHash(glyph_new->sha1, glyphSet->fdepth);
 
+        if (!glyph_new->glyph || glyph_new->glyph == DeletedGlyph) {
+            /* Double-check we didn't make a glyph for this as part of this glyphset */
+            for (j = 0; j < i; j++)
+                if (glyphs[j].glyph && memcmp(glyphs[j].sha1, glyph_new->sha1, 20) == 0) {
+                    glyph_new->glyph = glyphs[j].glyph;
+                    break;
+                }
+        }
+
         if (glyph_new->glyph && glyph_new->glyph != DeletedGlyph) {
-            glyph_new->found = TRUE;
             ++glyph_new->glyph->refcnt;
         }
         else {
             GlyphPtr glyph;
 
-            glyph_new->found = FALSE;
             glyph_new->glyph = glyph = AllocateGlyph(&gi[i], glyphSet->fdepth);
             if (!glyph) {
                 err = BadAlloc;
@@ -1189,8 +1195,7 @@ ProcRenderAddGlyphs(ClientPtr client)
         FreeScratchPixmapHeader(pSrcPix);
     for (i = 0; i < nglyphs; i++) {
         if (glyphs[i].glyph) {
-            --glyphs[i].glyph->refcnt;
-            if (!glyphs[i].found)
+            if (--glyphs[i].glyph->refcnt == 0)
                 free(glyphs[i].glyph);
         }
     }
