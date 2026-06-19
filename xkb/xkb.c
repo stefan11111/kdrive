@@ -1750,7 +1750,6 @@ CheckKeySyms(ClientPtr client,
              CARD16 *symsPerKey, xkbSymMapWireDesc ** wireRtrn, int *errorRtrn, Bool doswap)
 {
     register unsigned i;
-    XkbSymMapPtr map;
     xkbSymMapWireDesc *wire = *wireRtrn;
 
     if (!(XkbKeySymsMask & req->present))
@@ -1813,21 +1812,6 @@ CheckKeySyms(ClientPtr client,
         wire = (xkbSymMapWireDesc *) &pSyms[wire->nSyms];
     }
 
-    map = &xkb->map->key_sym_map[i];
-    for (; i <= (unsigned) xkb->max_key_code; i++, map++) {
-        register int g, nG, w;
-
-        nG = XkbKeyNumGroups(xkb, i);
-        for (w = g = 0; g < nG; g++) {
-            if (map->kt_index[g] >= (unsigned) nTypes) {
-                *errorRtrn = _XkbErrCode4(0x18, i, g, map->kt_index[g]);
-                return 0;
-            }
-            if (mapWidths[map->kt_index[g]] > w)
-                w = mapWidths[map->kt_index[g]];
-        }
-        symsPerKey[i] = w * nG;
-    }
     *wireRtrn = wire;
     return 1;
 }
@@ -2223,9 +2207,20 @@ SetKeySyms(ClientPtr client,
     changes->map.num_key_syms = (last - first + 1);
 
     s = 0;
-    for (i = xkb->min_key_code; i <= xkb->max_key_code; i++) {
+    oldMap = &xkb->map->key_sym_map[xkb->min_key_code];
+    for (i = xkb->min_key_code; i <= xkb->max_key_code; i++, oldMap++) {
         if (XkbKeyNumGroups(xkb, i) > s)
             s = XkbKeyNumGroups(xkb, i);
+        if (i >= first && i <= last) {
+            /* Skip keys that were explicitly updated */
+            continue;
+        }
+        for (unsigned char g = 0; g < XkbNumGroups(oldMap->group_info); g++) {
+            if (oldMap->kt_index[g] < xkb->map->num_types)
+                continue;
+            /* Deleted type: use an automatic type */
+            // TODO: implement fallback to automatic types
+        }
     }
     if (s != xkb->ctrls->num_groups) {
         xkbControlsNotify cn;
@@ -2556,6 +2551,7 @@ _XkbSetMapChecks(ClientPtr client, DeviceIntPtr dev, xkbSetMapReq * req,
     CARD16 symsPerKey[XkbMaxLegalKeyCode + 1] = { 0 };
     XkbSymMapPtr map;
     int i;
+    int max_changed_key;
 
     if (!dev->key)
         return 0;
@@ -2593,16 +2589,34 @@ _XkbSetMapChecks(ClientPtr client, DeviceIntPtr dev, xkbSetMapReq * req,
 	    return BadValue;
     }
 
+    max_changed_key = req->firstKeySym + req->nKeySyms;
+
     map = &xkb->map->key_sym_map[xkb->min_key_code];
     for (i = xkb->min_key_code; i < xkb->max_key_code; i++, map++) {
         register int g, ng, w;
 
+        if ((req->present & XkbKeySymsMask) &&
+            i >= req->firstKeySym && i < max_changed_key) {
+                /* Skip updated keys, since we do not know their type yet */
+                continue;
+        }
+
         ng = XkbNumGroups(map->group_info);
         for (w = g = 0; g < ng; g++) {
             if (map->kt_index[g] >= (unsigned) nTypes) {
+            // TODO: implement fallback to automatic types
+            // if (map->kt_index[g] >= (unsigned) nTypes &&
+            //     (!(req->present & XkbKeyTypesMask) ||
+            //      !(req->flags & XkbSetMapResizeTypes))) {
+                /* Key type was deleted without updating the key, which
+                 * is permitted only with a proper key types list update
+                 * and a fallback to one of the automatic types. */
                 client->errorValue = _XkbErrCode4(0x13, i, g, map->kt_index[g]);
                 return BadValue;
             }
+            /* NOTE: a key type may still have been moved or deleted if it is in
+             * the updated range. In that case we rely on the width check for
+             * symbols. */
             if (mapWidths[map->kt_index[g]] > w)
                 w = mapWidths[map->kt_index[g]];
         }
@@ -4421,13 +4435,14 @@ _XkbSetNames(ClientPtr client, DeviceIntPtr dev, xkbSetNamesReq * stuff)
         tmp = (CARD32 *) (((char *) tmp) + XkbPaddedSize(stuff->nKTLevels));
         type = &xkb->map->types[stuff->firstKTLevel];
         for (i = 0; i < stuff->nKTLevels; i++, type++) {
-            if (width[i] > 0) {
-                if (type->level_names) {
-                    register unsigned n;
-
-                    for (n = 0; n < width[i]; n++) {
-                        type->level_names[n] = tmp[n];
-                    }
+            if (type->level_names) {
+                register unsigned n;
+                for (n = 0; n < width[i]; n++) {
+                    type->level_names[n] = tmp[n];
+                }
+                /* Reset other level names */
+                for (n = width[i]; n < type->num_levels; n++) {
+                    type->level_names[n] = None;
                 }
                 tmp += width[i];
             }
