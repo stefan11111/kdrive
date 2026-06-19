@@ -1728,6 +1728,19 @@ init_pointer(struct xwl_seat *xwl_seat)
         ActivateDevice(xwl_seat->pointer, TRUE);
     }
     enable_device(xwl_seat, xwl_seat->pointer);
+
+    /* If the pointer comes back after we got a request for a pointer locking
+     * or confinement, try again now that we've got our pointer back.
+     */
+    if (xwl_seat->pending_pointer_lock.has_pending_pointer_warp)
+        xwl_seat_emulate_pointer_warp(xwl_seat,
+                                      xwl_seat->pending_pointer_lock.xwl_window,
+                                      NULL,
+                                      xwl_seat->pending_pointer_lock.pending_x,
+                                      xwl_seat->pending_pointer_lock.pending_y);
+    if (xwl_seat->pending_pointer_lock.has_pending_confined_pointer)
+        xwl_seat_confine_pointer(xwl_seat,
+                                 xwl_seat->pending_pointer_lock.xwl_window);
 }
 
 static void
@@ -3394,6 +3407,17 @@ xwl_pointer_warp_emulator_maybe_lock(struct xwl_pointer_warp_emulator *warp_emul
     struct xwl_seat *xwl_seat = warp_emulator->xwl_seat;
     GrabPtr pointer_grab = xwl_seat->pointer->deviceGrab.grab;
 
+    /* Can't lock the pointer without pointer caps */
+    if (!xwl_seat->wl_pointer) {
+        xwl_seat->pending_pointer_lock.has_pending_pointer_warp = TRUE;
+        xwl_seat->pending_pointer_lock.xwl_window = xwl_window;
+        xwl_seat->pending_pointer_lock.pending_x = x;
+        xwl_seat->pending_pointer_lock.pending_y = y;
+
+        return;
+    }
+    xwl_seat->pending_pointer_lock.has_pending_pointer_warp = FALSE;
+
     if (warp_emulator->locked_pointer)
         return;
 
@@ -3424,6 +3448,17 @@ xwl_pointer_warp_emulator_warp(struct xwl_pointer_warp_emulator *warp_emulator,
                                SpritePtr sprite,
                                int x, int y)
 {
+    struct xwl_seat *xwl_seat = warp_emulator->xwl_seat;
+
+    if (!xwl_seat->wl_pointer) {
+        xwl_seat->pending_pointer_lock.has_pending_pointer_warp = TRUE;
+        xwl_seat->pending_pointer_lock.xwl_window = xwl_window;
+        xwl_seat->pending_pointer_lock.pending_x = x;
+        xwl_seat->pending_pointer_lock.pending_y = y;
+
+        return;
+    }
+
     xwl_pointer_warp_emulator_maybe_lock(warp_emulator,
                                          xwl_window,
                                          sprite,
@@ -3610,8 +3645,11 @@ xwl_seat_confine_pointer(struct xwl_seat *xwl_seat,
     if (!pointer_constraints)
         return;
 
-    if (!xwl_seat->wl_pointer)
+    if (!xwl_seat->wl_pointer) {
+        xwl_seat->pending_pointer_lock.has_pending_confined_pointer = TRUE;
         return;
+    }
+    xwl_seat->pending_pointer_lock.has_pending_confined_pointer = FALSE;
 
     if (xwl_seat->cursor_confinement_window == xwl_window &&
         xwl_seat->confined_pointer)
@@ -3646,9 +3684,20 @@ void
 xwl_seat_unconfine_pointer(struct xwl_seat *xwl_seat)
 {
     xwl_seat->cursor_confinement_window = NULL;
+    xwl_seat->pending_pointer_lock.has_pending_confined_pointer = FALSE;
 
     if (xwl_seat->confined_pointer)
         xwl_seat_destroy_confined_pointer(xwl_seat);
+}
+
+void xwl_seat_clear_pending_pointer_lock(struct xwl_seat *xwl_seat,
+                                         struct xwl_window *xwl_window)
+{
+    if (xwl_seat->pending_pointer_lock.xwl_window == xwl_window) {
+        xwl_seat->pending_pointer_lock.has_pending_pointer_warp = FALSE;
+        xwl_seat->pending_pointer_lock.has_pending_confined_pointer = FALSE;
+        xwl_seat->pending_pointer_lock.xwl_window = NULL;
+    }
 }
 
 void
