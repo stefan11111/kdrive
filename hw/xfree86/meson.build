@@ -111,7 +111,7 @@ xorg_server = executable(
 subdir('dixmods')
 subdir('exa')
 subdir('fbdevhw')
-if gbm_dep.found()
+if build_glamor and build_gbm
     subdir('glamor_egl')
 endif
 if int10 != 'false'
