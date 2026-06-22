@@ -30,8 +30,8 @@
  *   Kristian Høgsberg (krh@redhat.com)
  */
 
-#ifdef HAVE_XORG_CONFIG_H
-#include <xorg-config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
 
 #include <X11/X.h>
@@ -41,15 +41,12 @@
 #include "dixstruct.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
+#include "extinit.h"
 #include "extnsionst.h"
 #include "xfixes.h"
 #include "dri2.h"
 #include "dri2int.h"
 #include "protocol-versions.h"
-
-/* The only xf86 includes */
-#include "xf86Module.h"
-#include "xf86Extensions.h"
 
 static int DRI2EventBase;
 

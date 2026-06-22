@@ -154,6 +154,12 @@ extern void XvExtensionInit(void);
 extern void XvMCExtensionInit(void);
 #endif
 
+#ifdef DRI2
+#include <X11/extensions/dri2proto.h>
+extern Bool noDRI2Extension;
+void DRI2ExtensionInit(void);
+#endif
+
 #if defined(DRI3)
 extern void dri3_extension_init(void);
 #endif
