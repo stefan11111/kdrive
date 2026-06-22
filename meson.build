@@ -184,12 +184,15 @@ if ['windows', 'darwin', 'cygwin'].contains(host_machine.system())
     hal_option = 'false'
 endif
 
-build_udev = get_option('udev')
-build_udev_kms = get_option('udev_kms')
-if ['windows', 'darwin', 'cygwin', 'netbsd', 'openbsd', 'sunos'].contains(host_machine.system())
-    build_udev = false
-    build_udev_kms = false
+udev_option = get_option('udev')
+udev_kms_option = get_option('udev_kms')
+if not dependency('libudev', required: (udev_option == 'true' or udev_kms_option == 'true')).found()
+    udev_option = 'false'
+    udev_kms_option = 'false'
 endif
+
+build_udev = (udev_option != 'false')
+build_udev_kms = (udev_kms_option != 'false')
 
 if get_option('systemd_logind') == 'auto'
     build_systemd_logind = build_udev_kms and dbus_dep.found()
