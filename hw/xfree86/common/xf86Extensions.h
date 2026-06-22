@@ -33,12 +33,6 @@ extern _X_EXPORT Bool noXFree86DRIExtension;
 extern void XFree86DRIExtensionInit(void);
 #endif
 
-#ifdef DRI2
-#include <X11/extensions/dri2proto.h>
-extern _X_EXPORT Bool noDRI2Extension;
-extern void DRI2ExtensionInit(void);
-#endif
-
 #ifdef XF86VIDMODE
 #include <X11/extensions/xf86vmproto.h>
 extern _X_EXPORT Bool noXFree86VidModeExtension;

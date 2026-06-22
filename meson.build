@@ -700,6 +700,7 @@ inc = include_directories(
     'miext/shadow',
     'miext/sync',
     'dbe',
+    'dri2',
     'dri3',
     'include',
     'present',
@@ -797,6 +798,7 @@ subdir('include')
 # X server core
 subdir('config')
 subdir('dix')
+subdir('dri2')
 subdir('dri3')
 subdir('glx')
 subdir('fb')
@@ -854,6 +856,7 @@ libxserver = [
     libxserver_os,
 ]
 
+libxserver += libxserver_dri2
 libxserver += libxserver_dri3
 
 subdir('hw')

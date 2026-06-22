@@ -76,13 +76,6 @@ static const ExtensionModule extensionModules[] = {
         &noXFree86DRIExtension
     },
 #endif
-#ifdef DRI2
-    {
-        DRI2ExtensionInit,
-        DRI2_NAME,
-        &noDRI2Extension
-    }
-#endif
 };
 
 static void
