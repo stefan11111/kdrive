@@ -531,8 +531,8 @@ Bool
 KdAddMode(const KdMonitorTiming *new);
 
 Bool
-KdTuneMode(KdScreenInfo * screen,
-           Bool (*usable) (KdScreenInfo *),
+KdTuneMode(KdScreenInfo * screen, const KdMonitorTiming *m,
+           Bool (*usable) (KdScreenInfo *, const KdMonitorTiming *),
            Bool (*supported) (KdScreenInfo *, const KdMonitorTiming *));
 
 #ifdef RANDR
