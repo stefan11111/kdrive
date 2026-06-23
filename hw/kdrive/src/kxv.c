@@ -35,11 +35,11 @@ of the copyright holder.
 
 */
 
-#ifdef HAVE_DIX_CONFIG_H
-#include <dix-config.h>
-#endif
-#include "kdrive.h"
+#include <kdrive-config.h>
 
+#include "extinit.h"
+
+#include "kdrive.h"
 #include "scrnintstr.h"
 #include "regionstr.h"
 #include "windowstr.h"
@@ -49,12 +49,11 @@ of the copyright holder.
 #include "resource.h"
 #include "gcstruct.h"
 #include "dixstruct.h"
+#include "kxv.h"
+#include "fourcc.h"
 
 #include <X11/extensions/Xv.h>
 #include <X11/extensions/Xvproto.h>
-
-#include "kxv.h"
-#include "fourcc.h"
 
 /* XvAdaptorRec fields */
 
@@ -88,7 +87,7 @@ static int KdXVQueryImageAttributes(XvPortPtr, XvImagePtr,
 static Bool KdXVDestroyWindow(WindowPtr pWin);
 static void KdXVWindowExposures(WindowPtr pWin, RegionPtr r1);
 static void KdXVClipNotify(WindowPtr pWin, int dx, int dy);
-static Bool KdXVCloseScreen(ScreenPtr);
+static Bool KdXVCloseScreen(ScreenPtr pScreen);
 
 /* misc */
 static Bool KdXVInitAdaptors(ScreenPtr, KdVideoAdaptorPtr, int);
@@ -134,7 +133,7 @@ KdXVScreenInit(ScreenPtr pScreen, KdVideoAdaptorPtr adaptors, int num)
     KdXvScreenKey = XvGetScreenKey();
     PortResource = XvGetRTPort();
 
-    ScreenPriv = malloc(sizeof(KdXVScreenRec));
+    ScreenPriv = calloc(1, sizeof(KdXVScreenRec));
     dixSetPrivate(&pScreen->devPrivates, &KdXVScreenPrivateKey, ScreenPriv);
 
     if (!ScreenPriv)
@@ -708,6 +707,27 @@ KdXVReputImage(XvPortRecPrivatePtr portPriv)
 }
 
 static int
+KdXVReputAllVideo(WindowPtr pWin, void *data)
+{
+    KdXVWindowPtr WinPriv;
+
+    if (pWin->drawable.type != DRAWABLE_WINDOW)
+        return WT_DONTWALKCHILDREN;
+
+    WinPriv = GET_KDXV_WINDOW(pWin);
+
+    while (WinPriv) {
+        if (WinPriv->PortRec->type == XvInputMask)
+            KdXVReputVideo(WinPriv->PortRec);
+        else
+            KdXVRegetVideo(WinPriv->PortRec);
+        WinPriv = WinPriv->next;
+    }
+
+    return WT_WALKCHILDREN;
+}
+
+static int
 KdXVEnlistPortInWindow(WindowPtr pWin, XvPortRecPrivatePtr portPriv)
 {
     KdXVWindowPtr winPriv, PrivRoot;
@@ -722,7 +742,7 @@ KdXVEnlistPortInWindow(WindowPtr pWin, XvPortRecPrivatePtr portPriv)
     }
 
     if (!winPriv) {
-        winPriv = malloc(sizeof(KdXVWindowRec));
+        winPriv = calloc(1, sizeof(KdXVWindowRec));
         if (!winPriv)
             return BadAlloc;
         winPriv->PortRec = portPriv;
@@ -752,6 +772,61 @@ KdXVRemovePortFromWindow(WindowPtr pWin, XvPortRecPrivatePtr portPriv)
         winPriv = winPriv->next;
     }
     portPriv->pDraw = NULL;
+}
+
+static Bool
+KdXVRunning(ScreenPtr pScreen)
+{
+    return (KdXVGeneration == serverGeneration && GET_XV_SCREEN(pScreen) != 0);
+}
+
+Bool
+KdXVEnable(ScreenPtr pScreen)
+{
+    if (!KdXVRunning(pScreen))
+        return TRUE;
+
+    WalkTree(pScreen, KdXVReputAllVideo, 0);
+
+    return TRUE;
+}
+
+void
+KdXVDisable(ScreenPtr pScreen)
+{
+    XvScreenPtr pxvs;
+    XvAdaptorPtr pAdaptor;
+    XvPortPtr pPort;
+    XvPortRecPrivatePtr pPriv;
+    int i, j;
+
+    if (!KdXVRunning(pScreen))
+        return;
+
+    pxvs = GET_XV_SCREEN(pScreen);
+
+    for (i = 0; i < pxvs->nAdaptors; i++) {
+        pAdaptor = &pxvs->pAdaptors[i];
+        for (j = 0; j < pAdaptor->nPorts; j++) {
+            pPort = &pAdaptor->pPorts[j];
+            pPriv = (XvPortRecPrivatePtr) pPort->devPriv.ptr;
+            if (pPriv->isOn > XV_OFF) {
+
+                (*pPriv->AdaptorRec->StopVideo) (pPriv->screen,
+                                                 pPriv->DevPriv.ptr, TRUE);
+                pPriv->isOn = XV_OFF;
+
+                if (pPriv->pCompositeClip && pPriv->FreeCompositeClip)
+                    RegionDestroy(pPriv->pCompositeClip);
+
+                pPriv->pCompositeClip = NULL;
+
+                if (!pPriv->type && pPriv->pDraw) {     /* still */
+                    KdXVRemovePortFromWindow((WindowPtr) pPriv->pDraw, pPriv);
+                }
+            }
+        }
+    }
 }
 
 /****  ScreenRec fields ****/

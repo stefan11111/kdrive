@@ -1536,16 +1536,15 @@ glamor_egl_close_screen(ScreenPtr screen)
     screen_pixmap = screen->GetScreenPixmap(screen);
     pixmap_priv = glamor_get_pixmap_private(screen_pixmap);
 
-    if (pixmap_priv && pixmap_priv->image) {
+    if (pixmap_priv && pixmap_priv->image != EGL_NO_IMAGE_KHR) {
         eglDestroyImageKHR(glamor_egl->display, pixmap_priv->image);
-        pixmap_priv->image = NULL;
+        pixmap_priv->image = EGL_NO_IMAGE_KHR;
     }
-
-    glamor_egl_pre_close_screen_cleanup(glamor_egl);
 
     screen->CloseScreen = glamor_egl->saved_close_screen;
     ret = screen->CloseScreen(screen);
 
+    glamor_egl_pre_close_screen_cleanup(glamor_egl);
     glamor_egl_post_close_screen(screen);
 
     return ret;
