@@ -350,6 +350,8 @@ if get_option('pciaccess')
 endif
 conf_data.set('XSERVER_PLATFORM_BUS', build_udev_kms ? '1' : false)
 
+conf_data.set_quoted('DEFAULT_LOGDIR', log_dir)
+
 configure_file(output : 'dix-config.h',
                configuration : conf_data)
 
@@ -391,7 +393,6 @@ xorg_data.set_quoted('XCONFIGFILE', 'xorg.conf')
 xorg_data.set_quoted('XCONFIGDIR', 'xorg.conf.d')
 xorg_data.set_quoted('DEFAULT_XDG_STATE_HOME', '.local/state')
 xorg_data.set_quoted('DEFAULT_XDG_STATE_HOME_LOGDIR', 'xorg')
-xorg_data.set_quoted('DEFAULT_LOGDIR', log_dir)
 xorg_data.set_quoted('DEFAULT_LOGPREFIX', 'Xorg.')
 xorg_data.set_quoted('DEFAULT_MODULE_PATH', get_option('prefix') / module_dir)
 xorg_data.set_quoted('DEFAULT_LIBRARY_PATH', get_option('prefix') / get_option('libdir'))
@@ -424,7 +425,6 @@ configure_file(output : 'xorg-config.h',
                configuration : xorg_data)
 
 xwin_data = configuration_data()
-xwin_data.set_quoted('DEFAULT_LOGDIR', log_dir)
 xwin_data.set('HAS_WINSOCK', host_machine.system() == 'windows' ? '1' : false,
               description: 'Use Windows sockets')
 xwin_data.set('HAS_DEVWINDOWS', host_machine.system() == 'cygwin' ? '1' : false,
