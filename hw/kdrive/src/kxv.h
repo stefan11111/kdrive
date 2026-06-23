@@ -148,6 +148,10 @@ typedef struct {
 Bool
  KdXVScreenInit(ScreenPtr pScreen, KdVideoAdaptorPtr Adaptors, int num);
 
+/* Must be called from KdCardInfo functions, can be called without Xv enabled */
+Bool KdXVEnable(ScreenPtr);
+void KdXVDisable(ScreenPtr);
+
 /*** These are DDX layer privates ***/
 
 typedef struct {
@@ -177,7 +181,7 @@ typedef struct {
     DrawablePtr pDraw;
     unsigned char type;
     unsigned int subWindowMode;
-    DDXPointRec clipOrg;
+    xPoint clipOrg;
     RegionPtr clientClip;
     RegionPtr pCompositeClip;
     Bool FreeCompositeClip;
@@ -193,5 +197,10 @@ typedef struct _KdXVWindowRec {
     XvPortRecPrivatePtr PortRec;
     struct _KdXVWindowRec *next;
 } KdXVWindowRec, *KdXVWindowPtr;
+
+#ifdef GLAMOR
+/* Must not be called before glamor is fully initialized */
+void kd_glamor_xv_init(ScreenPtr screen);
+#endif
 
 #endif                          /* _XVDIX_H_ */

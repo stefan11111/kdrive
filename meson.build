@@ -291,12 +291,14 @@ if build_xquartz
 endif
 
 build_xephyr = get_option('xephyr')
+build_xfbdev = get_option('xfbdev')
 build_xvfb = get_option('xvfb')
 
 summary({
         'Xorg': build_xorg,
         'Xwayland': build_xwayland,
         'Xephyr': build_xephyr,
+        'Xfbdev': build_xfbdev,
         'Xnest': build_xnest,
         'Xvfb': build_xvfb,
         'Xwin': build_xwin,
