@@ -41,6 +41,9 @@ DevPrivateKeyRec glamor_screen_private_key;
 DevPrivateKeyRec glamor_pixmap_private_key;
 DevPrivateKeyRec glamor_gc_private_key;
 
+void (*glamor_egl_screen_init2)(ScreenPtr screen, struct glamor_context *glamor_ctx) =
+       glamor_egl_screen_init;
+
 glamor_screen_private *
 glamor_get_screen_private(ScreenPtr screen)
 {
@@ -661,7 +664,7 @@ glamor_init(ScreenPtr screen, unsigned int flags)
     /* If we are using egl screen, call egl screen init to
      * register correct close screen function. */
     if (flags & GLAMOR_USE_EGL_SCREEN) {
-        glamor_egl_screen_init(screen, &glamor_priv->ctx);
+        glamor_egl_screen_init2(screen, &glamor_priv->ctx);
     }
 
     glamor_make_current(glamor_priv);

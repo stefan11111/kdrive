@@ -352,6 +352,9 @@ typedef struct glamor_screen_private {
     struct glamor_context ctx;
 } glamor_screen_private;
 
+/* Allow overriding the default glamor screen init proc */
+extern void (*glamor_egl_screen_init2)(ScreenPtr screen, struct glamor_context *glamor_ctx);
+
 typedef enum glamor_access {
     GLAMOR_ACCESS_RO,
     GLAMOR_ACCESS_RW,
@@ -395,10 +398,11 @@ typedef struct glamor_pixmap_private {
     GLuint pbo;
     RegionRec prepare_region;
     Bool prepared;
-#ifdef GLAMOR_HAS_GBM
+
+    /* For DRI3 */
     EGLImageKHR image;
     Bool used_modifiers;
-#endif
+
     /** block width of this large pixmap. */
     int block_w;
     /** block height of this large pixmap. */
