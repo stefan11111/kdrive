@@ -308,8 +308,14 @@ fbdevScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
             screen->fb.depth = 16;
     }
 
+    scrpriv->max_width = 0;
+    scrpriv->max_height = 0;
+
     rate = KdFindRate(screen, fbdevModeSupported);
     if (k >= 0) {
+        scrpriv->max_width = var.xres;
+        scrpriv->max_height = var.yres;
+
         /* Add the current framebuffer mode */
         fbdevConvertVarToTiming(&var, &curr_mode);
         KdAddMode(&curr_mode);
@@ -330,6 +336,14 @@ fbdevScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 
     /* Sets priv->fix, priv->var */
     KdTuneMode(screen, t, fbdevSetMode, fbdevModeSupported);
+
+    if (scrpriv->max_width < screen->width) {
+        scrpriv->max_width = screen->width;
+    }
+
+    if (scrpriv->max_height < screen->height) {
+        scrpriv->max_height = screen->height;
+    }
 
     depth = priv->var.bits_per_pixel;
     gray = priv->var.grayscale;
@@ -655,8 +669,9 @@ fbdevRandrModeSupported(ScreenPtr pScreen, const KdMonitorTiming *t)
 {
     KdScreenPriv(pScreen);
     KdScreenInfo *screen = pScreenPriv->screen;
+    FbdevScrPriv *scrpriv = screen->driver;
 
-    return (t->horizontal <= screen->width) && (t->vertical <= screen->height);
+    return (t->horizontal <= scrpriv->max_width) && (t->vertical <= scrpriv->max_height);
 }
 
 static Bool
