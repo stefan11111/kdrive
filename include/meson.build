@@ -99,10 +99,6 @@ conf_data.set('CONFIG_WSCONS', host_machine.system() in ['openbsd', 'netbsd'] ? 
 
 conf_data.set('HAVE_XSHMFENCE', xshmfence_dep.found() ? '1' : false)
 conf_data.set('WITH_LIBDRM', libdrm_required ? '1' : false)
-conf_data.set('GLAMOR_HAS_EGL_QUERY_DMABUF',
-              epoxy_dep.found() and epoxy_dep.version().version_compare('>= 1.4.4') ? '1' : false)
-conf_data.set('GLAMOR_HAS_EGL_QUERY_DRIVER',
-              epoxy_dep.found() and epoxy_dep.version().version_compare('>= 1.5.4') ? '1' : false)
 conf_data.set('GLXEXT', build_glx ? '1' : false)
 conf_data.set('GLAMOR', build_glamor ? '1' : false)
 conf_data.set('GLAMOR_HAS_GBM', build_gbm ? '1' : false)
@@ -110,10 +106,14 @@ conf_data.set('GLAMOR_HAS_GBM_LINEAR',
               build_glamor and build_gbm and gbm_dep.version().version_compare('>= 10.6') ? '1' : false)
 conf_data.set('GBM_BO_WITH_MODIFIERS',
               build_glamor and build_gbm and gbm_dep.version().version_compare('>= 17.1') ? '1' : false)
+conf_data.set('GBM_BO_FD',
+              build_glamor and gbm_dep.found() and cc.has_header_symbol('gbm.h', 'gbm_bo_get_fd', dependencies : gbm_dep )  ? '1' : false)
 conf_data.set('GBM_BO_FD_FOR_PLANE',
               build_glamor and build_gbm and gbm_dep.version().version_compare('>= 21.1') ? '1' : false)
 conf_data.set('GBM_BO_WITH_MODIFIERS2',
               build_glamor and build_gbm and gbm_dep.version().version_compare('>= 21.3') ? '1' : false)
+conf_data.set('GBM_HAVE_BO_USE_FRONT_RENDERING',
+              build_glamor and build_gbm and cc.has_header_symbol('gbm.h','GBM_BO_USE_FRONT_RENDERING', dependencies: gbm_dep ) ? '1' : false)
 
 conf_data.set_quoted('SERVER_MISC_CONFIG_PATH', serverconfigdir)
 conf_data.set_quoted('PROJECTROOT', get_option('prefix'))
