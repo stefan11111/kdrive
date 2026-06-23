@@ -68,6 +68,14 @@ from The Open Group.
 #include "glx_extinit.h"
 #include "randrstr.h"
 
+#ifdef GLAMOR
+#include "glamor.h"
+#include "glamor_egl.h"
+
+#include <unistd.h>
+#include <fcntl.h>
+#endif
+
 #define VFB_DEFAULT_WIDTH      1280
 #define VFB_DEFAULT_HEIGHT     1024
 #define VFB_DEFAULT_DEPTH        24
@@ -112,6 +120,9 @@ typedef struct {
 #ifdef HAS_SHM
     int shmid;
 #endif
+#ifdef GLAMOR
+    int dri_fd;
+#endif
 } vfbScreenInfo, *vfbScreenInfoPtr;
 
 static int vfbNumScreens;
@@ -135,6 +146,10 @@ typedef enum { NORMAL_MEMORY_FB, SHARED_MEMORY_FB, MMAPPED_FILE_FB } fbMemType;
 static fbMemType fbmemtype = NORMAL_MEMORY_FB;
 static char needswap = 0;
 static Bool Render = TRUE;
+#ifdef GLAMOR
+static Bool use_glamor = FALSE;
+static char *render_node = NULL;
+#endif
 
 #define swapcopy16(_dst, _src) \
     if (needswap) { CARD16 _s = _src; cpswaps(_s, _dst); } \
@@ -306,6 +321,11 @@ ddxUseMsg(void)
     ErrorF("-shmem                 put framebuffers in shared memory\n");
 #endif
 
+#ifdef GLAMOR
+    ErrorF("-glamor                enable glamor render acceleration\n");
+    ErrorF("-dri </dev/dri/renderDxxx>  render device to use\n");
+#endif
+
     ErrorF("-crtcs n               number of CRTCs per screen (default: %d)\n",
            VFB_DEFAULT_NUM_CRTCS);
 }
@@ -425,6 +445,22 @@ ddxProcessArgument(int argc, char *argv[], int i)
     if (strcmp(argv[i], "-shmem") == 0) {       /* -shmem */
         fbmemtype = SHARED_MEMORY_FB;
         return 1;
+    }
+#endif
+
+#ifdef GLAMOR
+    if (strcmp(argv[i], "-glamor") == 0) {
+        use_glamor = TRUE;
+        return 1;
+    }
+
+    if (strcmp(argv[i], "-dri") == 0) {
+        if (i + 1 < argc) {
+            render_node = argv[i + 1];
+            return 2;
+        }
+        UseMsg();
+        exit(1);
     }
 #endif
 
@@ -799,8 +835,61 @@ vfbCloseScreen(ScreenPtr pScreen)
         (*pScreen->DestroyPixmap) (pScreen->devPrivate);
     pScreen->devPrivate = NULL;
 
+#ifdef GLAMOR
+    if (pvfb->dri_fd >= 0) {
+        close(pvfb->dri_fd);
+        pvfb->dri_fd = -1;
+    }
+#endif
+
     return pScreen->CloseScreen(pScreen);
 }
+
+#ifdef GLAMOR
+static Bool
+vfbGlamorInit(ScreenPtr pScreen)
+{
+    vfbScreenInfoPtr pvfb = &vfbScreens[pScreen->myNum];
+
+    if (!use_glamor && !render_node) {
+        return FALSE;
+    }
+
+    pvfb->dri_fd = render_node ? open(render_node, O_RDWR | O_CLOEXEC) : -1;
+
+    glamor_egl_conf_t glamor_egl_conf = {
+                                         .screen = pScreen,
+                                         .fd = pvfb->dri_fd,
+                                         .llvmpipe_allowed = TRUE,
+                                         .force_glamor = TRUE,
+                                        };
+
+    if (!glamor_egl_init_internal(&glamor_egl_conf, NULL)) {
+        close(pvfb->dri_fd);
+        return FALSE;
+    }
+
+    const char *renderer = (const char*)glGetString(GL_RENDERER);
+
+    int flags = GLAMOR_USE_EGL_SCREEN;
+    if (!renderer ||
+        strstr(renderer, "softpipe") ||
+        strstr(renderer, "llvmpipe")) {
+        flags |= GLAMOR_NO_RENDER_ACCEL;
+    }
+
+    if (pvfb->dri_fd < 0 || flags & GLAMOR_NO_RENDER_ACCEL) {
+        flags |= GLAMOR_NO_DRI3;
+    }
+
+    if (!glamor_init(pScreen, flags)) {
+        close(pvfb->dri_fd);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#endif
 
 static Bool
 vfbRROutputValidateMode(ScreenPtr           pScreen,
@@ -1030,8 +1119,12 @@ vfbScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (!ret)
         return FALSE;
 
-    if (Render)
+    if (Render) {
         fbPictureInit(pScreen, 0, 0);
+#ifdef GLAMOR
+        vfbGlamorInit(pScreen);
+#endif
+    }
 
     if (!vfbRandRInit(pScreen))
        return FALSE;
