@@ -940,7 +940,9 @@ glamor_close_screen(ScreenPtr screen)
     }
 
     screen_pixmap = screen->GetScreenPixmap(screen);
-    glamor_pixmap_destroy_fbo(screen_pixmap);
+    if (screen_pixmap) {
+        glamor_pixmap_destroy_fbo(screen_pixmap);
+    }
 
     glamor_release_screen_priv(screen);
 
