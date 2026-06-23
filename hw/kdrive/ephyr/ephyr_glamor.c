@@ -25,10 +25,10 @@
  *
  * Glamor support and EGL setup.
  */
+#include <kdrive-config.h>
+
 #define MESA_EGL_NO_X11_HEADERS
 #define EGL_NO_X11
-
-#include <dix-config.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -122,11 +122,10 @@ ephyr_glamor_build_glsl_prog(GLuint vs, GLuint fs)
     glLinkProgram(prog);
     glGetProgramiv(prog, GL_LINK_STATUS, &ok);
     if (!ok) {
-        GLchar *info;
         GLint size;
 
         glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &size);
-        info = malloc(size);
+        GLchar *info = calloc(1, size);
 
         glGetProgramInfoLog(prog, size, NULL, info);
         ErrorF("Failed to link: %s\n", info);
@@ -330,7 +329,7 @@ ephyr_glamor_screen_init(xcb_window_t win, xcb_visualid_t vid)
 
     glamor = calloc(1, sizeof(struct ephyr_glamor));
     if (!glamor) {
-        FatalError("malloc");
+        FatalError("calloc");
         return NULL;
     }
 
