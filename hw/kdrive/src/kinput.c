@@ -2211,6 +2211,7 @@ static void
 KdWarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
 {
     input_lock();
+    KdCurScreen = pScreen->myNum;
     miPointerWarpCursor(pDev, pScreen, x, y);
     input_unlock();
 }
