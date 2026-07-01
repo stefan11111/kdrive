@@ -57,7 +57,6 @@ typedef struct _fbdevScrPriv {
 typedef struct _fbScreenConf {
 const char *fbdevDevicePath;
 Bool fbDisableShadow;
-Bool fbNoAccel;
 
 char *fbdev_glvnd_provider;
 
