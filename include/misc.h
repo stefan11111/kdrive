@@ -406,6 +406,9 @@ extern _X_EXPORT unsigned long serverGeneration;
 /* Stop all event delivery to clients effective immediately. */
 extern Bool stopAllEventDelivery;
 
+/* Allow clients to force the X server to terminate */
+extern Bool allowForceTerminate;
+
 /* Don't use this directly, use BUG_WARN or BUG_WARN_MSG instead */
 #define __BUG_WARN_MSG(cond, with_msg, ...)                                \
           do { if (cond) {                                                \
