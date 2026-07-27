@@ -6038,6 +6038,8 @@ ProcRecolorCursor(ClientPtr client)
     return Success;
 }
 
+Bool stopAllEventDelivery;
+
 /**
  * Write the given events to a client, swapping the byte order if necessary.
  * To swap the byte ordering, a callback is called that has to be set up for
@@ -6060,6 +6062,9 @@ WriteEventsToClient(ClientPtr pClient, int count, xEvent *events)
 #endif
     xEvent *eventTo, *eventFrom;
     int i, eventlength = sizeof(xEvent);
+
+    if (stopAllEventDelivery)
+        return;
 
     if (!pClient || pClient == serverClient || pClient->clientGone)
         return;
