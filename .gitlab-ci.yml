@@ -4,7 +4,7 @@
 # Please see the ci-templates documentation for details:
 # https://freedesktop.pages.freedesktop.org/ci-templates/
 
-.templates_sha: &template_sha baa94a8f673dd1f11f81377106310752936d3672 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha c117daf8216a5f586588cf6c14718e349df32cb3 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 # FDO_DISTRIBUTION_TAG is the tag of the docker image used for the build jobs.
 # If the image doesn't exist yet, the docker-image stage generates it.
@@ -22,9 +22,9 @@ variables:
     XORG_DEBIAN_VERSION:  'bookworm-slim'
     XORG_DEBIAN_EXEC:     'env FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/debian-install.sh'
     XORG_DEBIAN_TAG:      '2026-04-28-pytest'
-    XORG_FREEBSD_VERSION: '14.2'
+    XORG_FREEBSD_VERSION: '15.1'
     XORG_FREEBSD_EXEC:    ''
-    XORG_FREEBSD_TAG:     '2025-02-18-vm-image'
+    XORG_FREEBSD_TAG:     '2026-07-09-freebsd-15.1'
 
 include:
   - project: 'freedesktop/ci-templates'
