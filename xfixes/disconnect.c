@@ -80,12 +80,18 @@ ProcXFixesSetClientDisconnectMode(ClientPtr client)
      * and have permission to manage the server.
      */
     if (stuff->disconnect_mode & XFixesClientDisconnectFlagForceTerminate) {
-        if (!allowForceTerminate)
+        if (!ClientIsLocal(client)) {
+            LogMessage(X_WARNING, "Forced server termination request refused because client is not local");
             return BadAccess;
-        if (!ClientIsLocal(client))
-            return BadAccess;
-        if ((rc = XaceHookServerAccess(client, DixManageAccess)))
+        }
+        if ((rc = XaceHookServerAccess(client, DixManageAccess))) {
+            LogMessage(X_WARNING, "Forced server termination request blocked by X Access Control Extension");
             return rc;
+        }
+        if (!allowForceTerminate) {
+            LogMessage(X_WARNING, "Forced server termination request blocked by server configuration (remove NoAllowForceTerminate to enable)");
+            return BadAccess;
+        }
     }
 
     pDisconnect->disconnect_mode = stuff->disconnect_mode;
