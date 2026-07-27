@@ -127,6 +127,9 @@
 /* Use libpciaccess */
 #mesondefine XSERVER_LIBPCIACCESS
 
+/* Have pci_device_is_boot_display in libpciaccess */
+#mesondefine HAVE_PCI_DEVICE_IS_BOOT_DISPLAY
+
 /* Have setugid */
 #mesondefine HAVE_ISSETUGID
 
