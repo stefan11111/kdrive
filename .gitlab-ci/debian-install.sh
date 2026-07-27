@@ -47,7 +47,6 @@ apt-get install -y \
 	libnvidia-egl-wayland-dev \
 	libpango1.0-0 \
 	libpango1.0-dev \
-	libpciaccess-dev \
 	libpixman-1-dev \
 	libselinux1-dev \
 	libspice-protocol-dev \
@@ -154,6 +153,16 @@ pushd libxtrans
 make -j${FDO_CI_CONCURRENT:-4} install
 popd
 rm -rf libxtrans
+
+# Xorg prefers libpciaccess >= 0.19
+# but Debian bookworm has only 0.17
+git clone https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git --depth 1 --branch=libpciaccess-0.19
+pushd libpciaccess
+meson setup _build
+meson compile -C _build
+meson install -C _build
+popd
+rm -rf libpciaccess
 
 # wayland-protocols 1.38 requires either wayland-scanner 1.23 or a build with
 # dtd_validation=false, but Debian bookworm has only 1.21 w/ dtd_validation=true
