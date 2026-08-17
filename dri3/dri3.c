@@ -36,6 +36,13 @@ dri3_close_screen(ScreenPtr screen)
 
     unwrap(screen_priv, screen, CloseScreen);
 
+    if (screen_priv && screen_priv->formats && screen_priv->formats_cached) {
+        for (int i = 0; i < screen_priv->num_formats; i++) {
+            free(screen_priv->formats[i].modifiers);
+        }
+        free(screen_priv->formats);
+    }
+    free(screen_priv->info);
     free(screen_priv);
     return (*screen->CloseScreen) (screen);
 }
@@ -43,21 +50,31 @@ dri3_close_screen(ScreenPtr screen)
 Bool
 dri3_screen_init(ScreenPtr screen, const dri3_screen_info_rec *info)
 {
+    dri3_screen_priv_ptr screen_priv;
     dri3_screen_generation = serverGeneration;
 
     if (!dixRegisterPrivateKey(&dri3_screen_private_key, PRIVATE_SCREEN, 0))
         return FALSE;
 
-    if (!dri3_screen_priv(screen)) {
-        dri3_screen_priv_ptr screen_priv = calloc(1, sizeof (dri3_screen_priv_rec));
+    screen_priv = dri3_screen_priv(screen);
+
+    if (!screen_priv) {
+        screen_priv = calloc(1, sizeof (dri3_screen_priv_rec));
         if (!screen_priv)
             return FALSE;
 
         wrap(screen_priv, screen, CloseScreen, dri3_close_screen);
 
-        screen_priv->info = info;
-
         dixSetPrivate(&screen->devPrivates, &dri3_screen_private_key, screen_priv);
+    }
+
+    if (info) {
+        void *ptr = realloc(screen_priv->info, sizeof(*info));
+        if (!ptr) {
+            return FALSE;
+        }
+        screen_priv->info = ptr;
+        *screen_priv->info = *info;
     }
 
     return TRUE;
